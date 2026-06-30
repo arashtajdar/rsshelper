@@ -5,7 +5,7 @@
   },
   "deploy": {
     "volumes": {
-      "news-data": "/data"
+      "news-data": "/app/db"
     }
   }
 }

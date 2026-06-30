@@ -1,4 +1,6 @@
-db/
-logs/
+db/*
+!db/.keep
+logs/*
+!logs/.keep
 cookies.txt
 server.log
