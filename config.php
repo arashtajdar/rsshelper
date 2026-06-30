@@ -11,25 +11,19 @@ $rss_feeds = [
 
 // Paths
 $is_railway = getenv('RAILWAY_ENVIRONMENT_NAME') || getenv('RAILWAY_ENVIRONMENT');
-$db_dir = __DIR__ . '/db';
-$log_dir = __DIR__ . '/logs';
+$db_dir = $is_railway ? '/tmp/db' : __DIR__ . '/db';
+$log_dir = $is_railway ? '/tmp/logs' : __DIR__ . '/logs';
 
 if (!is_dir($db_dir)) {
-    if (!mkdir($db_dir, 0777, true)) {
+    if (!@mkdir($db_dir, 0777, true)) {
         die("Failed to create directory: $db_dir. Please ensure it is writable.");
     }
 }
-if (!is_writable($db_dir)) {
-    die("Directory $db_dir exists but is NOT writable by PHP user.");
-}
 
 if (!is_dir($log_dir)) {
-    if (!mkdir($log_dir, 0777, true)) {
+    if (!@mkdir($log_dir, 0777, true)) {
         die("Failed to create directory: $log_dir. Please ensure it is writable.");
     }
-}
-if (!is_writable($log_dir)) {
-    die("Directory $log_dir exists but is NOT writable by PHP user.");
 }
 
 define('DB_PATH', $db_dir . '/database.sqlite');
