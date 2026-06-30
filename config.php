@@ -43,14 +43,25 @@ $source_colors = [
 
 // Paths
 $is_railway = getenv('RAILWAY_ENVIRONMENT_NAME') || getenv('RAILWAY_ENVIRONMENT');
+$railway_volume = getenv('RAILWAY_VOLUME_MOUNT_PATH');
 
-$db_dir = $is_railway ? '/var/www/html/db' : __DIR__ . '/db';
-$log_dir = $is_railway ? '/tmp/logs' : __DIR__ . '/logs';
+if ($is_railway) {
+    // If Railway injected a volume path, prefer it. Otherwise use the hardcoded one.
+    $db_dir = $railway_volume ?: '/var/www/html/db';
+    $log_dir = '/tmp/logs';
+} else {
+    $db_dir = __DIR__ . '/db';
+    $log_dir = __DIR__ . '/logs';
+}
 
 if (!is_dir($db_dir)) {
     if (!@mkdir($db_dir, 0777, true)) {
         die("Failed to create directory: $db_dir. Please ensure it is writable.");
     }
+}
+
+if (!is_writable($db_dir)) {
+    die("The directory $db_dir is not writable by the application. Current user: " . get_current_user() . ". Please check Railway volume permissions.");
 }
 
 if (!is_dir($log_dir)) {
