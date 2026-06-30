@@ -45,7 +45,7 @@ $source_colors = [
 $is_railway = getenv('RAILWAY_ENVIRONMENT_NAME') || getenv('RAILWAY_ENVIRONMENT');
 
 $db_dir = $is_railway ? '/var/www/html/db' : __DIR__ . '/db';
-$log_dir = $is_railway ? '/var/www/html/logs' : __DIR__ . '/logs';
+$log_dir = $is_railway ? '/tmp/logs' : __DIR__ . '/logs';
 
 if (!is_dir($db_dir)) {
     if (!@mkdir($db_dir, 0777, true)) {
