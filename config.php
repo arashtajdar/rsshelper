@@ -43,8 +43,26 @@ $source_colors = [
 
 // Paths
 $is_railway = getenv('RAILWAY_ENVIRONMENT_NAME') || getenv('RAILWAY_ENVIRONMENT');
+$railway_volume = getenv('RAILWAY_VOLUME_MOUNT_PATH');
 
-$log_dir = $is_railway ? '/tmp/logs' : __DIR__ . '/logs';
+if ($is_railway) {
+    // If Railway injected a volume path, prefer it. Otherwise use the hardcoded one.
+    $db_dir = $railway_volume ?: '/var/www/html/db';
+    $log_dir = '/tmp/logs';
+} else {
+    $db_dir = __DIR__ . '/db';
+    $log_dir = __DIR__ . '/logs';
+}
+
+if (!is_dir($db_dir)) {
+    if (!@mkdir($db_dir, 0777, true)) {
+        die("Failed to create directory: $db_dir. Please ensure it is writable.");
+    }
+}
+
+if (!is_writable($db_dir)) {
+    die("The directory $db_dir is not writable by the application. Current user: " . get_current_user() . ". Please check Railway volume permissions.");
+}
 
 if (!is_dir($log_dir)) {
     if (!@mkdir($log_dir, 0777, true)) {
@@ -52,43 +70,33 @@ if (!is_dir($log_dir)) {
     }
 }
 
+define('DB_PATH', $db_dir . '/database.sqlite');
 define('LOG_PATH', $log_dir . '/app.log');
 
-// Setup MySQL Database
-$db_host = getenv('MYSQLHOST') ?: '127.0.0.1';
-$db_port = getenv('MYSQLPORT') ?: '3306';
-$db_user = getenv('MYSQLUSER') ?: 'root';
-$db_pass = getenv('MYSQLPASSWORD') ?: '';
-$db_name = getenv('MYSQLDATABASE') ?: 'rsshelper';
-
+// Setup Database
 try {
-    $dsn = "mysql:host=$db_host;port=$db_port;dbname=$db_name;charset=utf8mb4";
-    $db = new PDO($dsn, $db_user, $db_pass);
+    $db = new PDO('sqlite:' . DB_PATH);
     $db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
     // Create table
     $db->exec("CREATE TABLE IF NOT EXISTS news (
-        id INT AUTO_INCREMENT PRIMARY KEY,
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
         title TEXT,
-        link VARCHAR(255) UNIQUE,
-        status INT DEFAULT 0,
+        link TEXT UNIQUE,
+        status INTEGER DEFAULT 0,
         created_date DATE,
-        source VARCHAR(255)
+        source TEXT
     )");
 
     // Handle existing databases gracefully
     try {
-        $db->exec("ALTER TABLE news ADD COLUMN source VARCHAR(255)");
+        $db->exec("ALTER TABLE news ADD COLUMN source TEXT");
     } catch (PDOException $e) {
         // Column probably already exists, which is fine
     }
 
     // Create index
-    try {
-        $db->exec("CREATE INDEX idx_news_date_status ON news (created_date, status)");
-    } catch (PDOException $e) {
-        // Index probably already exists
-    }
+    $db->exec("CREATE INDEX IF NOT EXISTS idx_news_date_status ON news (created_date, status)");
 } catch (Exception $e) {
     die("Database setup failed: " . $e->getMessage());
 }
