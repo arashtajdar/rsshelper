@@ -25,6 +25,22 @@ $rss_feeds = [
     'Axios' => 'https://api.axios.com/feed/',
 ];
 
+$source_colors = [
+    'CNN' => '#ffe6e6',                 // Red
+    'Fox News' => '#e6f2ff',            // Blue
+    'New York Times' => '#f2f2f2',      // Black/White
+    'New York Post' => '#ffebf0',       // Red/Pink
+    'Washington Times' => '#e6e6ff',    // Dark Blue
+    'Washington Post' => '#e6f9ff',     // Light Cyan
+    'OAN' => '#e6f7ff',                 // Light Blue
+    'Guardian' => '#ffffe6',            // Yellow/Blue
+    'Spiegel' => '#fff0e6',             // Orange
+    'France 24' => '#e6ffff',           // Cyan
+    'BBC World' => '#ffe6f2',           // Red
+    'Wall Street Journal' => '#f0f0f0', // Black/White
+    'Axios' => '#e6ffe6'                // Teal/Green
+];
+
 // Paths
 $is_railway = getenv('RAILWAY_ENVIRONMENT_NAME') || getenv('RAILWAY_ENVIRONMENT');
 $db_dir = $is_railway ? '/tmp/db' : __DIR__ . '/db';

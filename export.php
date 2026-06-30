@@ -31,6 +31,7 @@ foreach ($news_items as $item) {
 <!DOCTYPE html>
 <html>
 <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Export News</title>
     <style>
         body { font-family: sans-serif; margin: 20px; background: #f9f9f9; }
@@ -44,9 +45,18 @@ foreach ($news_items as $item) {
         button:hover, .btn:hover { background: #0056b3; }
         .btn-danger { background: #dc3545; }
         .btn-danger:hover { background: #c82333; }
-        textarea { width: 100%; height: 200px; padding: 10px; margin-bottom: 20px; font-family: monospace; }
+        textarea { width: 100%; height: 200px; padding: 10px; margin-bottom: 20px; font-family: monospace; box-sizing: border-box; }
         .nav { margin-bottom: 20px; }
         .nav a { margin-right: 15px; color: #007bff; text-decoration: none; }
+        
+        /* Mobile Responsive */
+        @media (max-width: 600px) {
+            body { margin: 10px; }
+            .header { flex-direction: column; align-items: flex-start; gap: 15px; }
+            .controls { flex-direction: column; align-items: stretch; width: 100%; }
+            .controls form { display: flex; flex-direction: column; gap: 10px; width: 100%; }
+            .controls input[type="date"], .controls button { width: 100%; box-sizing: border-box; }
+        }
     </style>
 </head>
 <body>

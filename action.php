@@ -10,8 +10,11 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 $id = filter_input(INPUT_POST, 'id', FILTER_VALIDATE_INT);
 $action = $_POST['action'] ?? '';
 
-if ($id && in_array($action, ['accept', 'reject'])) {
-    $status = $action === 'accept' ? 1 : 2;
+if ($id && in_array($action, ['accept', 'reject', 'reset'])) {
+    $status = 0;
+    if ($action === 'accept') $status = 1;
+    if ($action === 'reject') $status = 2;
+    
     $stmt = $db->prepare("UPDATE news SET status = :status WHERE id = :id");
     $stmt->execute([':status' => $status, ':id' => $id]);
     echo json_encode(['success' => true]);

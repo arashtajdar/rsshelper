@@ -42,6 +42,7 @@ $available_sources = $src_stmt->fetchAll(PDO::FETCH_COLUMN);
 <!DOCTYPE html>
 <html>
 <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>News Dashboard</title>
     <style>
         body { font-family: sans-serif; margin: 20px; background: #f9f9f9; }
@@ -60,9 +61,23 @@ $available_sources = $src_stmt->fetchAll(PDO::FETCH_COLUMN);
         .btn-accept:hover { background: #218838; }
         .btn-reject { background: #dc3545; padding: 4px 8px; font-size: 12px; }
         .btn-reject:hover { background: #c82333; }
+        .btn-reset { background: #6c757d; color: white; border: none; padding: 4px 8px; font-size: 12px; border-radius: 4px; cursor: pointer; }
+        .btn-reset:hover { background: #5a6268; }
         select { padding: 8px; border-radius: 4px; border: 1px solid #ccc; font-size: 14px; }
         .nav { margin-bottom: 20px; }
         .nav a { margin-right: 15px; color: #007bff; text-decoration: none; }
+        
+        /* Mobile Responsive */
+        @media (max-width: 600px) {
+            body { margin: 10px; }
+            .header { flex-direction: column; align-items: flex-start; gap: 15px; }
+            .filter-bar form { flex-direction: column; align-items: stretch; }
+            .filter-bar input[type="text"], .filter-bar input[type="date"], .filter-bar select, .filter-bar button { width: 100%; box-sizing: border-box; }
+            .news-content { flex-direction: column; align-items: flex-start; gap: 10px; }
+            .news-actions { align-self: stretch; display: flex; justify-content: flex-end; gap: 10px; }
+            .news-actions button { flex: 1; padding: 10px; font-size: 14px; }
+            .source-badge { display: block; margin-bottom: 5px; width: fit-content; }
+        }
     </style>
 </head>
 <body>
@@ -114,24 +129,39 @@ $available_sources = $src_stmt->fetchAll(PDO::FETCH_COLUMN);
                 if ($item['status'] == 2) $bg_color = '#f8d7da';
             ?>
                 <li class="news-item" id="item-<?= $item['id'] ?>" style="background-color: <?= $bg_color ?>; transition: background-color 0.3s ease;">
-                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div class="news-content" style="display: flex; justify-content: space-between; align-items: center;">
                         <div>
-                            <span class="source-badge"><?= htmlspecialchars($item['source'] ?? 'Unknown') ?></span>
-                            <a href="<?= htmlspecialchars($item['link']) ?>" target="_blank"><?= htmlspecialchars($item['title']) ?></a>
+                            <?php $badge_color = $source_colors[$item['source']] ?? '#eee'; ?>
+                            <span class="source-badge" style="background-color: <?= $badge_color ?>; border: 1px solid rgba(0,0,0,0.1);"><?= htmlspecialchars($item['source'] ?? 'Unknown') ?></span>
+                            <a href="<?= htmlspecialchars($item['link']) ?>" target="_blank" style="line-height: 1.4; display: inline-block;"><?= htmlspecialchars($item['title']) ?></a>
                         </div>
-                        <div style="white-space: nowrap; margin-left: 10px;">
-                            <button type="button" onclick="triage(<?= $item['id'] ?>, 'accept', this)" class="btn-accept">Accept</button>
-                            <button type="button" onclick="triage(<?= $item['id'] ?>, 'reject', this)" class="btn-reject">Reject</button>
+                        <div class="news-actions" style="white-space: nowrap; margin-left: 10px;">
+                            <button type="button" id="btn-accept-<?= $item['id'] ?>" onclick="triage(<?= $item['id'] ?>, 'accept')" class="btn-accept" style="<?= $item['status'] == 1 ? 'display: none;' : '' ?>">Accept</button>
+                            <button type="button" id="btn-reject-<?= $item['id'] ?>" onclick="triage(<?= $item['id'] ?>, 'reject')" class="btn-reject" style="<?= $item['status'] == 2 ? 'display: none;' : '' ?>">Reject</button>
+                            <button type="button" id="btn-reset-<?= $item['id'] ?>" onclick="triage(<?= $item['id'] ?>, 'reset')" class="btn-reset" style="<?= $item['status'] == 0 ? 'display: none;' : '' ?>">Undo</button>
                         </div>
                     </div>
                 </li>
             <?php endforeach; ?>
         </ul>
         <script>
-            function triage(id, action, btn) {
-                const originalText = btn.innerText;
-                btn.innerText = '...';
-                btn.disabled = true;
+            function triage(id, action) {
+                const btnAccept = document.getElementById('btn-accept-' + id);
+                const btnReject = document.getElementById('btn-reject-' + id);
+                const btnReset = document.getElementById('btn-reset-' + id);
+                
+                let targetBtn;
+                if (action === 'accept') targetBtn = btnAccept;
+                else if (action === 'reject') targetBtn = btnReject;
+                else targetBtn = btnReset;
+                
+                const originalText = targetBtn.innerText;
+                targetBtn.innerText = '...';
+
+                // Disable all buttons while loading
+                btnAccept.disabled = true;
+                btnReject.disabled = true;
+                btnReset.disabled = true;
 
                 const formData = new FormData();
                 formData.append('id', id);
@@ -143,25 +173,42 @@ $available_sources = $src_stmt->fetchAll(PDO::FETCH_COLUMN);
                 })
                 .then(response => response.json())
                 .then(data => {
+                    targetBtn.innerText = originalText;
+                    
+                    btnAccept.disabled = false;
+                    btnReject.disabled = false;
+                    btnReset.disabled = false;
+
                     if (data.success) {
                         const li = document.getElementById('item-' + id);
                         if (li) {
                             if (action === 'accept') {
                                 li.style.backgroundColor = '#d4edda';
-                            } else {
+                                btnAccept.style.display = 'none';
+                                btnReject.style.display = 'inline-block';
+                                btnReset.style.display = 'inline-block';
+                            } else if (action === 'reject') {
                                 li.style.backgroundColor = '#f8d7da';
+                                btnReject.style.display = 'none';
+                                btnAccept.style.display = 'inline-block';
+                                btnReset.style.display = 'inline-block';
+                            } else { // reset
+                                li.style.backgroundColor = 'white';
+                                btnReset.style.display = 'none';
+                                btnAccept.style.display = 'inline-block';
+                                btnReject.style.display = 'inline-block';
                             }
                         }
                     } else {
                         alert('Error updating item.');
                     }
-                    btn.innerText = originalText;
-                    btn.disabled = false;
                 })
                 .catch(err => {
                     alert('Network error.');
-                    btn.innerText = originalText;
-                    btn.disabled = false;
+                    targetBtn.innerText = originalText;
+                    btnAccept.disabled = false;
+                    btnReject.disabled = false;
+                    btnReset.disabled = false;
                 });
             }
         </script>
