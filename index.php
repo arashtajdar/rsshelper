@@ -122,6 +122,7 @@ $available_sources = $src_stmt->fetchAll(PDO::FETCH_COLUMN);
     </div>
 
     <?php if (count($news_items) > 0): ?>
+        <?php $news_count = count($news_items); ?>
         <ul class="news-list">
             <?php foreach ($news_items as $item): 
                 $bg_color = 'white';
@@ -133,7 +134,7 @@ $available_sources = $src_stmt->fetchAll(PDO::FETCH_COLUMN);
                         <div>
                             <?php $badge_color = $source_colors[$item['source']] ?? '#eee'; ?>
                             <span class="source-badge" style="background-color: <?= $badge_color ?>; border: 1px solid rgba(0,0,0,0.1);"><?= htmlspecialchars($item['source'] ?? 'Unknown') ?></span>
-                            <a href="<?= htmlspecialchars($item['link']) ?>" target="_blank" style="line-height: 1.4; display: inline-block;"><?= htmlspecialchars($item['title']) ?></a>
+                            <a href="<?= htmlspecialchars($item['link']) ?>" target="_blank" style="line-height: 1.4; display: inline-block;"><?= $news_count-- ?>. <?= htmlspecialchars($item['title']) ?></a>
                         </div>
                         <div class="news-actions" style="white-space: nowrap; margin-left: 10px;">
                             <button type="button" id="btn-accept-<?= $item['id'] ?>" onclick="triage(<?= $item['id'] ?>, 'accept')" class="btn-accept" style="<?= $item['status'] == 1 ? 'display: none;' : '' ?>">Accept</button>
