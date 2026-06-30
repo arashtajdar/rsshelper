@@ -100,5 +100,8 @@ foreach ($news_items as $item) {
         <p>No selected news for this date.</p>
     <?php endif; ?>
 
+    <div style="margin-top: 40px; padding: 20px 0; border-top: 1px solid #ccc; text-align: center; color: #777; font-size: 12px;">
+        &copy; <?= date('Y') ?> RSS Helper. All rights reserved.
+    </div>
 </body>
 </html>

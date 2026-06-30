@@ -5,8 +5,24 @@ session_start();
 define('ACCESS_KEY', getenv('ACCESS_KEY') ?: 'secret123'); // Fallback for testing
 
 $rss_feeds = [
-    'https://news.ycombinator.com/rss',
-    'https://feeds.bbci.co.uk/news/world/rss.xml',
+    // US News
+    'CNN' => 'http://rss.cnn.com/rss/cnn_topstories.rss',
+    'Fox News' => 'https://moxie.foxnews.com/google-publisher/latest.xml',
+    'New York Times' => 'https://rss.nytimes.com/services/xml/rss/nyt/HomePage.xml',
+    'New York Post' => 'https://nypost.com/feed/',
+    'Washington Times' => 'https://www.washingtontimes.com/rss/headlines/news/',
+    'Washington Post' => 'https://feeds.washingtonpost.com/rss/world',
+    'OAN' => 'https://www.oann.com/feed/',
+    
+    // Europe News
+    'Guardian' => 'https://www.theguardian.com/world/rss',
+    'Spiegel' => 'https://www.spiegel.de/international/index.rss',
+    'France 24' => 'https://www.france24.com/en/rss',
+    'BBC World' => 'https://feeds.bbci.co.uk/news/world/rss.xml',
+    
+    // Check Occasionally
+    'Wall Street Journal' => 'https://feeds.a.dj.com/rss/RSSWorldNews.xml',
+    'Axios' => 'https://api.axios.com/feed/',
 ];
 
 // Paths
@@ -40,8 +56,16 @@ try {
         title TEXT,
         link TEXT UNIQUE,
         status INTEGER DEFAULT 0,
-        created_date DATE
+        created_date DATE,
+        source TEXT
     )");
+
+    // Handle existing databases gracefully
+    try {
+        $db->exec("ALTER TABLE news ADD COLUMN source TEXT");
+    } catch (PDOException $e) {
+        // Column probably already exists, which is fine
+    }
 
     // Create index
     $db->exec("CREATE INDEX IF NOT EXISTS idx_news_date_status ON news (created_date, status)");

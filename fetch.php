@@ -6,7 +6,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     die("Invalid request method");
 }
 
-$today = date('Y-m-d');
+$fetch_date = $_POST['date'] ?? date('Y-m-d');
 
 // Set stream context for timeout
 $ctx = stream_context_create([
@@ -18,7 +18,7 @@ $ctx = stream_context_create([
 $success_count = 0;
 $error_count = 0;
 
-foreach ($rss_feeds as $feed_url) {
+foreach ($rss_feeds as $source_name => $feed_url) {
     $xml_string = @file_get_contents($feed_url, false, $ctx);
 
     if ($xml_string === false) {
@@ -56,25 +56,47 @@ foreach ($rss_feeds as $feed_url) {
             $link = (string) $item->link['href'];
         }
 
+        // Extract and parse date
+        $pubDate = '';
+        if (isset($item->pubDate)) {
+            $pubDate = (string) $item->pubDate;
+        } elseif (isset($item->updated)) {
+            $pubDate = (string) $item->updated;
+        } elseif (isset($item->children('http://purl.org/dc/elements/1.1/')->date)) {
+            $pubDate = (string) $item->children('http://purl.org/dc/elements/1.1/')->date;
+        }
+
         if ($title && $link) {
-            try {
-                $stmt = $db->prepare("INSERT OR IGNORE INTO news (title, link, status, created_date) VALUES (:title, :link, 0, :date)");
-                $stmt->execute([
-                    ':title' => $title,
-                    ':link' => $link,
-                    ':date' => $today
-                ]);
-                $success_count++;
-            } catch (PDOException $e) {
-                logMessage("Database insert error for $link: " . $e->getMessage());
+            $item_date = $fetch_date; // Fallback to fetch date if no date found
+            if ($pubDate) {
+                $parsed_time = strtotime($pubDate);
+                if ($parsed_time) {
+                    $item_date = date('Y-m-d', $parsed_time);
+                }
+            }
+
+            // Only insert if the article's publish date matches the requested date
+            if ($item_date === $fetch_date) {
+                try {
+                    $stmt = $db->prepare("INSERT OR IGNORE INTO news (title, link, status, created_date, source) VALUES (:title, :link, 0, :date, :source)");
+                    $stmt->execute([
+                        ':title' => $title,
+                        ':link' => $link,
+                        ':date' => $fetch_date,
+                        ':source' => $source_name
+                    ]);
+                    $success_count++;
+                } catch (PDOException $e) {
+                    logMessage("Database insert error for $link: " . $e->getMessage());
+                }
             }
         }
     }
 
-    logMessage("Successfully processed feed: $feed_url");
+    logMessage("Successfully processed feed: $feed_url ($source_name)");
 }
 
 logMessage("Fetch complete. Items processed (attempted insert): $success_count. Feed errors: $error_count");
 
-header("Location: index.php?date=" . $today);
+header("Location: index.php?date=" . urlencode($fetch_date));
 die();
