@@ -78,7 +78,7 @@ foreach ($rss_feeds as $source_name => $feed_url) {
             // Only insert if the article's publish date matches the requested date
             if ($item_date === $fetch_date) {
                 try {
-                    $stmt = $db->prepare("INSERT OR IGNORE INTO news (title, link, status, created_date, source) VALUES (:title, :link, 0, :date, :source)");
+                    $stmt = $db->prepare("INSERT IGNORE INTO news (title, link, status, created_date, source) VALUES (:title, :link, 0, :date, :source)");
                     $stmt->execute([
                         ':title' => $title,
                         ':link' => $link,
