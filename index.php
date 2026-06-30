@@ -52,12 +52,13 @@ $news_items = $stmt->fetchAll(PDO::FETCH_ASSOC);
     <?php if (count($news_items) > 0): ?>
         <form method="POST" action="save.php">
             <input type="hidden" name="date" value="<?= htmlspecialchars($selected_date) ?>">
+            <?php $news_count = count($news_items); ?>
             <ul class="news-list">
                 <?php foreach ($news_items as $item): ?>
                     <li class="news-item">
                         <label>
                             <input type="checkbox" name="news_ids[]" value="<?= $item['id'] ?>">
-                            <a href="<?= htmlspecialchars($item['link']) ?>" target="_blank"><?= htmlspecialchars($item['title']) ?></a>
+                            <a href="<?= htmlspecialchars($item['link']) ?>" target="_blank"><?= $news_count-- ?>. <?= htmlspecialchars($item['title']) ?></a>
                         </label>
                     </li>
                 <?php endforeach; ?>
