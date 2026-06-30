@@ -75,20 +75,20 @@ foreach ($rss_feeds as $source_name => $feed_url) {
                 }
             }
 
-            // Only insert if the article's publish date matches the requested date
-            if ($item_date === $fetch_date) {
-                try {
-                    $stmt = $db->prepare("INSERT OR IGNORE INTO news (title, link, status, created_date, source) VALUES (:title, :link, 0, :date, :source)");
-                    $stmt->execute([
-                        ':title' => $title,
-                        ':link' => $link,
-                        ':date' => $fetch_date,
-                        ':source' => $source_name
-                    ]);
+            // Insert the article using the date it was actually published, or today's date
+            try {
+                $stmt = $db->prepare("INSERT IGNORE INTO news (title, link, status, created_date, source) VALUES (:title, :link, 0, :date, :source)");
+                $stmt->execute([
+                    ':title' => $title,
+                    ':link' => $link,
+                    ':date' => $item_date,
+                    ':source' => $source_name
+                ]);
+                if ($stmt->rowCount() > 0) {
                     $success_count++;
-                } catch (PDOException $e) {
-                    logMessage("Database insert error for $link: " . $e->getMessage());
                 }
+            } catch (PDOException $e) {
+                logMessage("Database insert error for $link: " . $e->getMessage());
             }
         }
     }
