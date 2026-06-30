@@ -10,9 +10,9 @@ $rss_feeds = [
 ];
 
 // Paths
-$is_railway = is_dir('/var/www/html') && getenv('RAILWAY_ENVIRONMENT');
-$db_dir = $is_railway ? '/var/www/html/db' : __DIR__ . '/db';
-$log_dir = $is_railway ? '/var/www/html/logs' : __DIR__ . '/logs';
+$is_railway = getenv('RAILWAY_ENVIRONMENT');
+$db_dir = $is_railway ? '/app/db' : __DIR__ . '/db';
+$log_dir = $is_railway ? '/app/logs' : __DIR__ . '/logs';
 
 if (!is_dir($db_dir)) {
     @mkdir($db_dir, 0777, true);
