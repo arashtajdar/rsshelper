@@ -87,7 +87,7 @@ try {
 
 // Authentication Gatekeeper
 function requireAuth() {
-    if (empty($_SESSION['authenticated']) || $_SESSION['authenticated'] !== true || empty($_SESSION['user_id'])) {
+    if (empty($_SESSION['authenticated']) || $_SESSION['authenticated'] !== true || !isset($_SESSION['user_id'])) {
         header("Location: auth.php");
         die('Access Denied');
     }
