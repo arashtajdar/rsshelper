@@ -4,3 +4,4 @@ logs/*
 !logs/.keep
 cookies.txt
 server.log
+.env
