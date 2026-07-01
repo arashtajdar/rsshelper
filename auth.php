@@ -22,14 +22,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $_SESSION['username'] = $user['username'];
         header("Location: index.php");
         die();
-    } elseif ($username === 'admin' && $password === ACCESS_KEY) {
-        // Fallback for initial setup
-        $_SESSION['authenticated'] = true;
-        $_SESSION['user_id'] = 0; // Temp ID
-        $_SESSION['role'] = 'admin';
-        $_SESSION['username'] = 'admin';
-        header("Location: admin.php");
-        die();
     } else {
         $error = 'Invalid username or password';
     }

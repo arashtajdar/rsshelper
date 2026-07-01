@@ -5,72 +5,6 @@ requireAdmin();
 
 $message = '';
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['init_db'])) {
-    try {
-        // Create news table
-        $db->exec("CREATE TABLE IF NOT EXISTS news (
-            id INT AUTO_INCREMENT PRIMARY KEY,
-            title TEXT,
-            link VARCHAR(255) UNIQUE,
-            status INT DEFAULT 0,
-            created_date DATE,
-            source VARCHAR(255)
-        )");
-
-        // Handle existing databases gracefully
-        try {
-            $db->exec("ALTER TABLE news ADD COLUMN source VARCHAR(255)");
-        } catch (PDOException $e) {
-            // Column probably already exists, which is fine
-        }
-
-        // Create users table
-        $db->exec("CREATE TABLE IF NOT EXISTS users (
-            id INT AUTO_INCREMENT PRIMARY KEY,
-            username VARCHAR(255) UNIQUE,
-            password_hash VARCHAR(255),
-            role VARCHAR(50) DEFAULT 'user'
-        )");
-
-        // Create user_news_status table
-        $db->exec("CREATE TABLE IF NOT EXISTS user_news_status (
-            user_id INT,
-            news_id INT,
-            status INT DEFAULT 0,
-            PRIMARY KEY (user_id, news_id)
-        )");
-
-        // Create action_history table
-        $db->exec("CREATE TABLE IF NOT EXISTS action_history (
-            id INT AUTO_INCREMENT PRIMARY KEY,
-            user_id INT,
-            news_id INT,
-            action_type VARCHAR(50),
-            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-        )");
-
-        // Seed admin user if none exist
-        $stmt = $db->query("SELECT COUNT(*) FROM users");
-        if ($stmt->fetchColumn() == 0) {
-            $hash = password_hash('password123', PASSWORD_DEFAULT);
-            $db->exec("INSERT INTO users (username, password_hash, role) VALUES ('admin', '$hash', 'admin')");
-            $message = "Database initialized and admin user created successfully.";
-        } else {
-            $message = "Database already initialized.";
-        }
-
-        // Create index
-        try {
-            $db->exec("CREATE INDEX idx_news_date_status ON news (created_date, status)");
-        } catch (PDOException $e) {
-            // Index probably already exists
-        }
-        
-    } catch (Exception $e) {
-        $message = "Error initializing database: " . $e->getMessage();
-    }
-}
-
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['create_user'])) {
     $new_username = trim($_POST['new_username'] ?? '');
     $new_password = $_POST['new_password'] ?? '';
@@ -169,14 +103,6 @@ $history_logs = $hist_stmt->fetchAll(PDO::FETCH_ASSOC);
     <?php endif; ?>
     
     <p>Welcome, Administrator.</p>
-    
-    <div style="margin-top: 30px; padding: 20px; background: white; border-radius: 4px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
-        <h3>System Operations</h3>
-        <form method="POST" action="admin.php">
-            <p>If you haven't set up the database tables yet, or need to ensure they exist, click the button below.</p>
-            <button type="submit" name="init_db" value="1">Initialize Database</button>
-        </form>
-    </div>
 
     <div style="margin-top: 30px; padding: 20px; background: white; border-radius: 4px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
         <h3>Manage Users</h3>
