@@ -8,11 +8,20 @@ $selected_search = $_GET['search'] ?? '';
 $selected_status = $_GET['status'] ?? '0';
 
 // Build query with optional source filter
-$query = "SELECT * FROM news WHERE created_date = :date";
-$params = [':date' => $selected_date];
+$current_user_id = $_SESSION['user_id'];
+
+$query = "SELECT news.*, COALESCE(user_news_status.status, 0) AS status 
+          FROM news 
+          LEFT JOIN user_news_status ON news.id = user_news_status.news_id AND user_news_status.user_id = :current_user_id 
+          WHERE news.created_date = :date";
+
+$params = [
+    ':date' => $selected_date,
+    ':current_user_id' => $current_user_id
+];
 
 if ($selected_status !== 'all') {
-    $query .= " AND status = :status";
+    $query .= " AND COALESCE(user_news_status.status, 0) = :status";
     $params[':status'] = (int)$selected_status;
 }
 
@@ -34,8 +43,16 @@ $stmt->execute($params);
 $news_items = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 // Fetch available sources for the dropdown
-$src_stmt = $db->prepare("SELECT DISTINCT source FROM news WHERE status = 0 AND created_date = :date AND source IS NOT NULL ORDER BY source ASC");
-$src_stmt->execute([':date' => $selected_date]);
+$src_stmt = $db->prepare("
+    SELECT DISTINCT news.source 
+    FROM news 
+    LEFT JOIN user_news_status ON news.id = user_news_status.news_id AND user_news_status.user_id = :current_user_id 
+    WHERE COALESCE(user_news_status.status, 0) = 0 
+      AND news.created_date = :date 
+      AND news.source IS NOT NULL 
+    ORDER BY news.source ASC
+");
+$src_stmt->execute([':date' => $selected_date, ':current_user_id' => $current_user_id]);
 $available_sources = $src_stmt->fetchAll(PDO::FETCH_COLUMN);
 
 ?>
@@ -81,8 +98,19 @@ $available_sources = $src_stmt->fetchAll(PDO::FETCH_COLUMN);
     </style>
 </head>
 <body>
-    <div class="nav">
-        <strong>Dashboard</strong> | <a href="export.php">Export / Archive</a>
+    <div class="nav" style="display: flex; justify-content: space-between; align-items: center;">
+        <div>
+            <strong>Dashboard</strong> | <a href="export.php">Export / Archive</a>
+            <?php if (isset($_SESSION['role']) && $_SESSION['role'] === 'admin'): ?>
+                | <a href="admin.php">Admin Dashboard</a>
+            <?php endif; ?>
+        </div>
+        <div>
+            <?php if (isset($_SESSION['username'])): ?>
+                Logged in as: <strong><?= htmlspecialchars($_SESSION['username']) ?></strong> | 
+            <?php endif; ?>
+            <a href="logout.php">Logout</a>
+        </div>
     </div>
 
 <?php 

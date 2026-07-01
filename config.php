@@ -54,6 +54,7 @@ if (!is_dir($log_dir)) {
 
 define('LOG_PATH', $log_dir . '/app.log');
 
+
 // Setup MySQL Database
 $mysql_url = getenv('MYSQL_URL') ?: getenv('DATABASE_URL');
 if ($mysql_url) {
@@ -75,30 +76,6 @@ try {
     $dsn = "mysql:host=$db_host;port=$db_port;dbname=$db_name;charset=utf8mb4";
     $db = new PDO($dsn, $db_user, $db_pass);
     $db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-
-    // Create table
-    $db->exec("CREATE TABLE IF NOT EXISTS news (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        title TEXT,
-        link VARCHAR(255) UNIQUE,
-        status INT DEFAULT 0,
-        created_date DATE,
-        source VARCHAR(255)
-    )");
-
-    // Handle existing databases gracefully
-    try {
-        $db->exec("ALTER TABLE news ADD COLUMN source VARCHAR(255)");
-    } catch (PDOException $e) {
-        // Column probably already exists, which is fine
-    }
-
-    // Create index
-    try {
-        $db->exec("CREATE INDEX idx_news_date_status ON news (created_date, status)");
-    } catch (PDOException $e) {
-        // Index probably already exists
-    }
 } catch (Exception $e) {
     if ($is_railway && $db_host === '127.0.0.1') {
         die("Database connection failed. It looks like the MySQL connection variables (MYSQL_URL, MYSQLHOST) were not passed to your app. Did you remember to link the MySQL database to this service in Railway? Error: " . $e->getMessage());
@@ -106,12 +83,23 @@ try {
     die("Database setup failed on host $db_host:$db_port. Error: " . $e->getMessage());
 }
 
+
+
 // Authentication Gatekeeper
 function requireAuth() {
-    if (empty($_SESSION['authenticated']) || $_SESSION['authenticated'] !== true) {
+    if (empty($_SESSION['authenticated']) || $_SESSION['authenticated'] !== true || empty($_SESSION['user_id'])) {
+        header("Location: auth.php");
         die('Access Denied');
     }
 }
+
+function requireAdmin() {
+    if (empty($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
+        http_response_code(403);
+        die('403 Forbidden - Admin access required');
+    }
+}
+
 
 function logMessage($message) {
     $date = date('Y-m-d H:i:s');

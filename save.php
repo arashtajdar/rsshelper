@@ -18,9 +18,15 @@ if (!empty($news_ids) && is_array($news_ids)) {
     if (!empty($valid_ids)) {
         $placeholders = rtrim(str_repeat('?,', count($valid_ids)), ',');
 
-        $sql = "UPDATE news SET status = 1 WHERE id IN ($placeholders)";
-        $stmt = $db->prepare($sql);
-        $stmt->execute(array_values($valid_ids));
+        $user_id = $_SESSION['user_id'];
+        foreach ($valid_ids as $news_id) {
+            $stmt = $db->prepare("
+                INSERT INTO user_news_status (user_id, news_id, status) 
+                VALUES (:user_id, :news_id, 1) 
+                ON DUPLICATE KEY UPDATE status = VALUES(status)
+            ");
+            $stmt->execute([':user_id' => $user_id, ':news_id' => $news_id]);
+        }
     }
 }
 

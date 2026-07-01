@@ -8,15 +8,29 @@ $action = $_POST['action'] ?? '';
 // Handle clear action
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && $action === 'clear') {
     $clear_date = $_POST['clear_date'] ?? $selected_date;
-    $stmt = $db->prepare("DELETE FROM news WHERE status = 1 AND created_date = :date");
-    $stmt->execute([':date' => $clear_date]);
+    // Instead of deleting the news item completely, we should reset the user's status or remove it
+    $stmt = $db->prepare("
+        DELETE FROM user_news_status 
+        WHERE user_id = :user_id 
+        AND status = 1 
+        AND news_id IN (SELECT id FROM news WHERE created_date = :date)
+    ");
+    $stmt->execute([':user_id' => $_SESSION['user_id'], ':date' => $clear_date]);
     header("Location: export.php?date=" . urlencode($clear_date));
     die();
 }
 
 // Fetch selected news for the given date
-$stmt = $db->prepare("SELECT * FROM news WHERE status = 1 AND created_date = :date ORDER BY id DESC");
-$stmt->execute([':date' => $selected_date]);
+$stmt = $db->prepare("
+    SELECT news.* 
+    FROM news 
+    INNER JOIN user_news_status ON news.id = user_news_status.news_id 
+    WHERE user_news_status.user_id = :user_id 
+      AND user_news_status.status = 1 
+      AND news.created_date = :date 
+    ORDER BY news.id DESC
+");
+$stmt->execute([':user_id' => $_SESSION['user_id'], ':date' => $selected_date]);
 $news_items = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 // Prepare text for copy
@@ -60,8 +74,16 @@ foreach ($news_items as $item) {
     </style>
 </head>
 <body>
-    <div class="nav">
-        <a href="index.php">Dashboard</a> | <strong>Export / Archive</strong>
+    <div class="nav" style="display: flex; justify-content: space-between; align-items: center;">
+        <div>
+            <a href="index.php">Dashboard</a> | <strong>Export / Archive</strong>
+        </div>
+        <div>
+            <?php if (isset($_SESSION['username'])): ?>
+                Logged in as: <strong><?= htmlspecialchars($_SESSION['username']) ?></strong> | 
+            <?php endif; ?>
+            <a href="logout.php">Logout</a>
+        </div>
     </div>
 
     <div class="header">
