@@ -5,9 +5,9 @@ requireAuth();
 $selected_date = $_GET['date'] ?? date('Y-m-d');
 $selected_source = $_GET['source'] ?? '';
 $selected_search = $_GET['search'] ?? '';
-$selected_status = $_GET['status'] ?? '0';
+$selected_status = $_GET['status'] ?? 'all';
 
-$current_page = max(1, (int)($_GET['page'] ?? 1));
+$current_page = max(1, (int) ($_GET['page'] ?? 1));
 $items_per_page = 50;
 
 // Build query with optional source filter
@@ -39,8 +39,10 @@ $count_stmt = $db->prepare($count_query);
 $count_stmt->execute($params);
 $total_items = (int) $count_stmt->fetchColumn();
 $total_pages = ceil($total_items / $items_per_page);
-if ($total_pages == 0) $total_pages = 1;
-if ($current_page > $total_pages) $current_page = $total_pages;
+if ($total_pages == 0)
+    $total_pages = 1;
+if ($current_page > $total_pages)
+    $current_page = $total_pages;
 
 $limit = (int) $items_per_page;
 $offset = (int) (($current_page - 1) * $items_per_page);
@@ -90,7 +92,8 @@ $news_items = $stmt->fetchAll(PDO::FETCH_ASSOC);
             align-items: center;
         }
 
-        .nav-links a, .nav-links span {
+        .nav-links a,
+        .nav-links span {
             color: #495057;
             text-decoration: none;
             font-weight: 500;
@@ -116,12 +119,12 @@ $news_items = $stmt->fetchAll(PDO::FETCH_ASSOC);
             gap: 20px;
             color: #6c757d;
         }
-        
+
         .user-info strong {
             color: #212529;
             font-weight: 600;
         }
-        
+
         .logout-btn {
             background-color: #fff;
             color: #dc3545;
@@ -145,7 +148,7 @@ $news_items = $stmt->fetchAll(PDO::FETCH_ASSOC);
             margin-bottom: 25px;
             padding: 0 5px;
         }
-        
+
         .page-header h2 {
             margin: 0;
             color: #2c3e50;
@@ -186,7 +189,8 @@ $news_items = $stmt->fetchAll(PDO::FETCH_ASSOC);
             flex-wrap: wrap;
         }
 
-        .pagination a, .pagination span {
+        .pagination a,
+        .pagination span {
             display: inline-flex;
             justify-content: center;
             align-items: center;
@@ -214,7 +218,8 @@ $news_items = $stmt->fetchAll(PDO::FETCH_ASSOC);
             border-color: #007bff;
         }
 
-        .pagination .disabled, .pagination .ellipsis {
+        .pagination .disabled,
+        .pagination .ellipsis {
             background-color: transparent;
             border-color: transparent;
             color: #adb5bd;
@@ -348,7 +353,8 @@ $news_items = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 padding: 15px;
             }
 
-            .nav-links, .user-info {
+            .nav-links,
+            .user-info {
                 flex-wrap: wrap;
                 justify-content: center;
             }
@@ -424,20 +430,25 @@ $news_items = $stmt->fetchAll(PDO::FETCH_ASSOC);
             <form method="POST" action="fetch.php" style="margin: 0;" onsubmit="return handleFetchSubmit(this)">
                 <input type="hidden" name="date" value="<?= htmlspecialchars($selected_date) ?>">
                 <button type="submit" class="btn-fetch">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                        <polyline points="7 10 12 15 17 10"></polyline>
+                        <line x1="12" y1="15" x2="12" y2="3"></line>
+                    </svg>
                     <span>Fetch Latest News</span>
                 </button>
             </form>
             <script>
-            function handleFetchSubmit(form) {
-                const btn = form.querySelector('.btn-fetch');
-                btn.disabled = true;
-                btn.style.backgroundColor = '#6c757d';
-                btn.style.boxShadow = 'none';
-                btn.style.cursor = 'not-allowed';
-                btn.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg> <span>Fetching...</span>';
-                return true;
-            }
+                function handleFetchSubmit(form) {
+                    const btn = form.querySelector('.btn-fetch');
+                    btn.disabled = true;
+                    btn.style.backgroundColor = '#6c757d';
+                    btn.style.boxShadow = 'none';
+                    btn.style.cursor = 'not-allowed';
+                    btn.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg> <span>Fetching...</span>';
+                    return true;
+                }
             </script>
         <?php endif; ?>
     </div>
@@ -445,7 +456,8 @@ $news_items = $stmt->fetchAll(PDO::FETCH_ASSOC);
     <?php if (isset($_SESSION['admin_fetch_log'])): ?>
         <div id="fetch-log-summary"
             style="background: #e8f4f8; padding: 15px; margin-bottom: 20px; border-radius: 4px; border: 1px solid #bce8f1; color: #31708f; position: relative;">
-            <button type="button" onclick="document.getElementById('fetch-log-summary').style.display='none'" style="position: absolute; top: 10px; right: 10px; background: transparent; border: none; font-size: 20px; color: #31708f; cursor: pointer; padding: 0; line-height: 1;">&times;</button>
+            <button type="button" onclick="document.getElementById('fetch-log-summary').style.display='none'"
+                style="position: absolute; top: 10px; right: 10px; background: transparent; border: none; font-size: 20px; color: #31708f; cursor: pointer; padding: 0; line-height: 1;">&times;</button>
             <h3 style="margin-top: 0;">Fetch Log Summary</h3>
             <p><strong>Total Successfully Inserted:</strong> <?= $_SESSION['admin_fetch_log']['total_success'] ?> <br>
                 <strong>Total Feed Errors:</strong> <?= $_SESSION['admin_fetch_log']['total_errors'] ?>
@@ -463,7 +475,8 @@ $news_items = $stmt->fetchAll(PDO::FETCH_ASSOC);
                     <?php foreach ($_SESSION['admin_fetch_log']['details'] as $agency => $stats): ?>
                         <tr>
                             <td style="padding: 8px; border: 1px solid #bce8f1; font-weight: bold;">
-                                <?= htmlspecialchars($agency) ?></td>
+                                <?= htmlspecialchars($agency) ?>
+                            </td>
                             <td style="padding: 8px; border: 1px solid #bce8f1;"><?= $stats['fetched'] ?></td>
                             <td
                                 style="padding: 8px; border: 1px solid #bce8f1; color: <?= $stats['error'] ? '#a94442' : '#3c763d' ?>;">
@@ -492,7 +505,8 @@ $news_items = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 <option value="">All Sources</option>
                 <?php foreach ($news_sources as $src_id => $src_data): ?>
                     <option value="<?= $src_id ?>" <?= (string) $src_id === $selected_source ? 'selected' : '' ?>>
-                        <?= htmlspecialchars($src_data['name']) ?></option>
+                        <?= htmlspecialchars($src_data['name']) ?>
+                    </option>
                 <?php endforeach; ?>
             </select>
             <input type="text" name="search" value="<?= htmlspecialchars($selected_search) ?>"
@@ -515,10 +529,13 @@ $news_items = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 <li class="news-item" id="item-<?= $item['id'] ?>"
                     style="background-color: <?= $bg_color ?>; transition: background-color 0.3s ease;">
                     <div class="news-content" style="display: flex; justify-content: space-between; align-items: center;">
-                        <div style="flex: 0 0 60px; margin-right: 15px; display: flex; align-items: center; justify-content: center;">
+                        <div
+                            style="flex: 0 0 60px; margin-right: 15px; display: flex; align-items: center; justify-content: center;">
                             <?php $logo = $news_sources[$item['source_id']]['logo'] ?? null; ?>
                             <?php if ($logo): ?>
-                                <img src="assets/logos/<?= htmlspecialchars($logo) ?>" alt="<?= htmlspecialchars($item['source'] ?? 'Unknown') ?>" style="max-width: 60px; max-height: 60px; object-fit: contain;">
+                                <img src="assets/logos/<?= htmlspecialchars($logo) ?>"
+                                    alt="<?= htmlspecialchars($item['source'] ?? 'Unknown') ?>"
+                                    style="max-width: 60px; max-height: 60px; object-fit: contain;">
                             <?php else: ?>
                                 <?php $badge_color = $source_colors[$item['source_id']] ?? '#eee'; ?>
                                 <span class="source-badge"
@@ -537,7 +554,8 @@ $news_items = $stmt->fetchAll(PDO::FETCH_ASSOC);
                             </div>
                             <?php if ($item['description']): ?>
                                 <div style="font-size: 0.85em; color: #555; line-height: 1.3; max-width: 900px;">
-                                    <?= htmlspecialchars($item['description']) ?></div>
+                                    <?= htmlspecialchars($item['description']) ?>
+                                </div>
                             <?php endif; ?>
                         </div>
                         <div class="news-actions" style="white-space: nowrap; margin-left: 10px;">
@@ -573,12 +591,13 @@ $news_items = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 <?php
                 $start_page = max(1, $current_page - 2);
                 $end_page = min($total_pages, $current_page + 2);
-                
+
                 if ($start_page > 1) {
                     echo '<a href="' . htmlspecialchars($base_url . '1') . '">1</a>';
-                    if ($start_page > 2) echo '<span class="ellipsis">...</span>';
+                    if ($start_page > 2)
+                        echo '<span class="ellipsis">...</span>';
                 }
-                
+
                 for ($p = $start_page; $p <= $end_page; $p++) {
                     if ($p == $current_page) {
                         echo '<span class="active">' . $p . '</span>';
@@ -586,9 +605,10 @@ $news_items = $stmt->fetchAll(PDO::FETCH_ASSOC);
                         echo '<a href="' . htmlspecialchars($base_url . $p) . '">' . $p . '</a>';
                     }
                 }
-                
+
                 if ($end_page < $total_pages) {
-                    if ($end_page < $total_pages - 1) echo '<span class="ellipsis">...</span>';
+                    if ($end_page < $total_pages - 1)
+                        echo '<span class="ellipsis">...</span>';
                     echo '<a href="' . htmlspecialchars($base_url . $total_pages) . '">' . $total_pages . '</a>';
                 }
                 ?>
