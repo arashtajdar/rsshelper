@@ -7,35 +7,50 @@ $selected_source = $_GET['source'] ?? '';
 $selected_search = $_GET['search'] ?? '';
 $selected_status = $_GET['status'] ?? '0';
 
+$current_page = max(1, (int)($_GET['page'] ?? 1));
+$items_per_page = 50;
+
 // Build query with optional source filter
 $current_user_id = $_SESSION['user_id'];
 
-$query = "SELECT news.*, COALESCE(user_news_status.status, 0) AS status 
-          FROM news 
-          LEFT JOIN user_news_status ON news.id = user_news_status.news_id AND user_news_status.user_id = :current_user_id 
-          WHERE DATE(news.published) = :date";
-
+$where_clause = "WHERE DATE(news.published) = :date";
 $params = [
     ':date' => $selected_date,
     ':current_user_id' => $current_user_id
 ];
 
 if ($selected_status !== 'all') {
-    $query .= " AND COALESCE(user_news_status.status, 0) = :status";
+    $where_clause .= " AND COALESCE(user_news_status.status, 0) = :status";
     $params[':status'] = (int) $selected_status;
 }
 
 if ($selected_source !== '') {
-    $query .= " AND source_id = :source";
+    $where_clause .= " AND source_id = :source";
     $params[':source'] = (int) $selected_source;
 }
 
 if ($selected_search !== '') {
-    $query .= " AND title LIKE :search";
+    $where_clause .= " AND title LIKE :search";
     $params[':search'] = '%' . $selected_search . '%';
 }
 
-$query .= " ORDER BY id DESC";
+$count_query = "SELECT COUNT(*) FROM news LEFT JOIN user_news_status ON news.id = user_news_status.news_id AND user_news_status.user_id = :current_user_id $where_clause";
+$count_stmt = $db->prepare($count_query);
+$count_stmt->execute($params);
+$total_items = (int) $count_stmt->fetchColumn();
+$total_pages = ceil($total_items / $items_per_page);
+if ($total_pages == 0) $total_pages = 1;
+if ($current_page > $total_pages) $current_page = $total_pages;
+
+$limit = (int) $items_per_page;
+$offset = (int) (($current_page - 1) * $items_per_page);
+
+$query = "SELECT news.*, COALESCE(user_news_status.status, 0) AS status 
+          FROM news 
+          LEFT JOIN user_news_status ON news.id = user_news_status.news_id AND user_news_status.user_id = :current_user_id 
+          $where_clause 
+          ORDER BY id DESC 
+          LIMIT $limit OFFSET $offset";
 
 $stmt = $db->prepare($query);
 $stmt->execute($params);
@@ -57,11 +72,145 @@ $news_items = $stmt->fetchAll(PDO::FETCH_ASSOC);
             background: #f9f9f9;
         }
 
-        .header {
+        .top-navbar {
             display: flex;
             justify-content: space-between;
             align-items: center;
+            background: #ffffff;
+            padding: 15px 25px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            margin-bottom: 25px;
+            font-size: 15px;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+        }
+
+        .nav-links a, .nav-links span {
+            color: #495057;
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.2s;
+        }
+
+        .nav-links a:hover {
+            color: #007bff;
+        }
+
+        .nav-links .active-link {
+            color: #007bff;
+            font-weight: 700;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            color: #6c757d;
+        }
+        
+        .user-info strong {
+            color: #212529;
+            font-weight: 600;
+        }
+        
+        .logout-btn {
+            background-color: #fff;
+            color: #dc3545;
+            padding: 8px 16px;
+            border-radius: 6px;
+            text-decoration: none !important;
+            font-weight: 600;
+            transition: all 0.2s;
+            border: 1px solid #dc3545;
+        }
+
+        .logout-btn:hover {
+            background-color: #dc3545;
+            color: white;
+        }
+
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            padding: 0 5px;
+        }
+        
+        .page-header h2 {
+            margin: 0;
+            color: #2c3e50;
+            font-size: 26px;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+
+        .btn-fetch {
+            background-color: #10b981;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 2px 4px rgba(16, 185, 129, 0.2);
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-fetch:hover {
+            background-color: #059669;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 6px rgba(16, 185, 129, 0.25);
+        }
+
+        .pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+            margin-top: 30px;
             margin-bottom: 20px;
+        }
+
+        .pagination a, .pagination span {
+            display: inline-block;
+            padding: 8px 14px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            text-decoration: none;
+            color: #495057;
+            background: white;
+            border: 1px solid #dee2e6;
+            transition: all 0.2s;
+        }
+
+        .pagination a:hover {
+            background-color: #f8f9fa;
+            border-color: #c1c9d0;
+            color: #007bff;
+        }
+
+        .pagination .active {
+            background-color: #007bff;
+            color: white;
+            border-color: #007bff;
+        }
+
+        .pagination .disabled, .pagination .ellipsis {
+            background-color: transparent;
+            border-color: transparent;
+            color: #adb5bd;
+            cursor: default;
         }
 
         .controls {
@@ -171,15 +320,7 @@ $news_items = $stmt->fetchAll(PDO::FETCH_ASSOC);
             font-size: 14px;
         }
 
-        .nav {
-            margin-bottom: 20px;
-        }
-
-        .nav a {
-            margin-right: 15px;
-            color: #007bff;
-            text-decoration: none;
-        }
+        /* old nav styles removed */
 
         /* Mobile Responsive */
         @media (max-width: 600px) {
@@ -187,10 +328,21 @@ $news_items = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 margin: 10px;
             }
 
-            .header {
+            .page-header {
                 flex-direction: column;
                 align-items: flex-start;
                 gap: 15px;
+            }
+
+            .top-navbar {
+                flex-direction: column;
+                gap: 15px;
+                padding: 15px;
+            }
+
+            .nav-links, .user-info {
+                flex-wrap: wrap;
+                justify-content: center;
             }
 
             .filter-bar form {
@@ -235,18 +387,19 @@ $news_items = $stmt->fetchAll(PDO::FETCH_ASSOC);
 </head>
 
 <body>
-    <div class="nav" style="display: flex; justify-content: space-between; align-items: center;">
-        <div>
-            <strong>Dashboard</strong> | <a href="export.php">Export / Archive</a>
+    <div class="top-navbar">
+        <div class="nav-links">
+            <span class="active-link">Dashboard</span>
+            <a href="export.php">Export / Archive</a>
             <?php if (isset($_SESSION['role']) && $_SESSION['role'] === 'admin'): ?>
-                | <a href="admin.php">Admin Dashboard</a>
+                <a href="admin.php">Admin Dashboard</a>
             <?php endif; ?>
         </div>
-        <div>
+        <div class="user-info">
             <?php if (isset($_SESSION['username'])): ?>
-                Logged in as: <strong><?= htmlspecialchars($_SESSION['username']) ?></strong> |
+                <span>Logged in as <strong><?= htmlspecialchars($_SESSION['username']) ?></strong></span>
             <?php endif; ?>
-            <a href="logout.php">Logout</a>
+            <a href="logout.php" class="logout-btn">Logout</a>
         </div>
     </div>
 
@@ -255,13 +408,16 @@ $news_items = $stmt->fetchAll(PDO::FETCH_ASSOC);
     $yesterday_str = date('Y-m-d', strtotime('-1 day'));
     $can_fetch = ($selected_date === $today_str || $selected_date === $yesterday_str);
     ?>
-    <div class="header">
+    <div class="page-header">
         <h2>News for <?= htmlspecialchars($selected_date) ?></h2>
 
         <?php if ($can_fetch): ?>
-            <form method="POST" action="fetch.php">
+            <form method="POST" action="fetch.php" style="margin: 0;">
                 <input type="hidden" name="date" value="<?= htmlspecialchars($selected_date) ?>">
-                <button type="submit" style="background-color: #28a745;">Fetch Latest News</button>
+                <button type="submit" class="btn-fetch">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                    Fetch Latest News
+                </button>
             </form>
         <?php endif; ?>
     </div>
@@ -326,7 +482,7 @@ $news_items = $stmt->fetchAll(PDO::FETCH_ASSOC);
     </div>
 
     <?php if (count($news_items) > 0): ?>
-        <?php $news_count = count($news_items); ?>
+        <?php $news_count = $total_items - (($current_page - 1) * $items_per_page); ?>
         <ul class="news-list">
             <?php foreach ($news_items as $item):
                 $bg_color = 'white';
@@ -371,6 +527,51 @@ $news_items = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 </li>
             <?php endforeach; ?>
         </ul>
+
+        <?php if ($total_pages > 1): ?>
+            <?php
+            // Build query string for pagination links
+            $query_params = $_GET;
+            unset($query_params['page']);
+            $base_url = '?' . http_build_query($query_params) . '&page=';
+            ?>
+            <div class="pagination">
+                <?php if ($current_page > 1): ?>
+                    <a href="<?= htmlspecialchars($base_url . ($current_page - 1)) ?>">&laquo; Previous</a>
+                <?php else: ?>
+                    <span class="disabled">&laquo; Previous</span>
+                <?php endif; ?>
+
+                <?php
+                $start_page = max(1, $current_page - 2);
+                $end_page = min($total_pages, $current_page + 2);
+                
+                if ($start_page > 1) {
+                    echo '<a href="' . htmlspecialchars($base_url . '1') . '">1</a>';
+                    if ($start_page > 2) echo '<span class="ellipsis">...</span>';
+                }
+                
+                for ($p = $start_page; $p <= $end_page; $p++) {
+                    if ($p == $current_page) {
+                        echo '<span class="active">' . $p . '</span>';
+                    } else {
+                        echo '<a href="' . htmlspecialchars($base_url . $p) . '">' . $p . '</a>';
+                    }
+                }
+                
+                if ($end_page < $total_pages) {
+                    if ($end_page < $total_pages - 1) echo '<span class="ellipsis">...</span>';
+                    echo '<a href="' . htmlspecialchars($base_url . $total_pages) . '">' . $total_pages . '</a>';
+                }
+                ?>
+
+                <?php if ($current_page < $total_pages): ?>
+                    <a href="<?= htmlspecialchars($base_url . ($current_page + 1)) ?>">Next &raquo;</a>
+                <?php else: ?>
+                    <span class="disabled">Next &raquo;</span>
+                <?php endif; ?>
+            </div>
+        <?php endif; ?>
         <script>
             function triage(id, action) {
                 const btnAccept = document.getElementById('btn-accept-' + id);
