@@ -129,6 +129,36 @@ $available_sources = $src_stmt->fetchAll(PDO::FETCH_COLUMN);
         <?php endif; ?>
     </div>
 
+    <?php if (isset($_SESSION['admin_fetch_log']) && isset($_SESSION['role']) && $_SESSION['role'] === 'admin'): ?>
+    <div style="background: #e8f4f8; padding: 15px; margin-bottom: 20px; border-radius: 4px; border: 1px solid #bce8f1; color: #31708f;">
+        <h3 style="margin-top: 0;">Fetch Log Summary</h3>
+        <p><strong>Total Successfully Inserted:</strong> <?= $_SESSION['admin_fetch_log']['total_success'] ?> <br>
+           <strong>Total Feed Errors:</strong> <?= $_SESSION['admin_fetch_log']['total_errors'] ?></p>
+        
+        <table style="width: 100%; border-collapse: collapse; margin-top: 10px; background: white; text-align: left;">
+            <thead>
+                <tr style="background: #d9edf7;">
+                    <th style="padding: 8px; border: 1px solid #bce8f1;">Agency</th>
+                    <th style="padding: 8px; border: 1px solid #bce8f1;">New Items Fetched</th>
+                    <th style="padding: 8px; border: 1px solid #bce8f1;">Error (if any)</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php foreach ($_SESSION['admin_fetch_log']['details'] as $agency => $stats): ?>
+                <tr>
+                    <td style="padding: 8px; border: 1px solid #bce8f1; font-weight: bold;"><?= htmlspecialchars($agency) ?></td>
+                    <td style="padding: 8px; border: 1px solid #bce8f1;"><?= $stats['fetched'] ?></td>
+                    <td style="padding: 8px; border: 1px solid #bce8f1; color: <?= $stats['error'] ? '#a94442' : '#3c763d' ?>;">
+                        <?= $stats['error'] ? htmlspecialchars($stats['error']) : 'None' ?>
+                    </td>
+                </tr>
+                <?php endforeach; ?>
+            </tbody>
+        </table>
+    </div>
+    <?php unset($_SESSION['admin_fetch_log']); ?>
+    <?php endif; ?>
+
     <div class="filter-bar" style="margin-bottom: 20px; background: white; padding: 15px; border-radius: 4px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
         <form method="GET" action="index.php" style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
             <input type="date" name="date" value="<?= htmlspecialchars($selected_date) ?>" style="padding: 8px; border-radius: 4px; border: 1px solid #ccc;">

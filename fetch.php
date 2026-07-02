@@ -18,11 +18,19 @@ $ctx = stream_context_create([
 $success_count = 0;
 $error_count = 0;
 
+$admin_log = [];
+
 foreach ($rss_feeds as $source_name => $feed_url) {
+    $agency_stats = ['fetched' => 0, 'error' => null];
+    
     $xml_string = @file_get_contents($feed_url, false, $ctx);
 
     if ($xml_string === false) {
+        $error = error_get_last();
+        $error_msg = $error ? $error['message'] : "Failed to fetch feed";
         logMessage("Failed to fetch feed: $feed_url");
+        $agency_stats['error'] = "HTTP Error: " . $error_msg;
+        $admin_log[$source_name] = $agency_stats;
         $error_count++;
         continue;
     }
@@ -30,7 +38,11 @@ foreach ($rss_feeds as $source_name => $feed_url) {
     $rss = @simplexml_load_string($xml_string, 'SimpleXMLElement', LIBXML_NOCDATA);
 
     if ($rss === false) {
+        $error = error_get_last();
+        $error_msg = $error ? $error['message'] : "Failed to parse feed";
         logMessage("Failed to parse feed: $feed_url");
+        $agency_stats['error'] = "XML Parse Error: " . $error_msg;
+        $admin_log[$source_name] = $agency_stats;
         $error_count++;
         continue;
     }
@@ -86,17 +98,30 @@ foreach ($rss_feeds as $source_name => $feed_url) {
                 ]);
                 if ($stmt->rowCount() > 0) {
                     $success_count++;
+                    $agency_stats['fetched']++;
                 }
             } catch (PDOException $e) {
                 logMessage("Database insert error for $link: " . $e->getMessage());
+                if (!$agency_stats['error']) {
+                    $agency_stats['error'] = "Database insert error.";
+                }
             }
         }
     }
 
+    $admin_log[$source_name] = $agency_stats;
     logMessage("Successfully processed feed: $feed_url ($source_name)");
 }
 
 logMessage("Fetch complete. Items processed (attempted insert): $success_count. Feed errors: $error_count");
+
+if (isset($_SESSION['role']) && $_SESSION['role'] === 'admin') {
+    $_SESSION['admin_fetch_log'] = [
+        'details' => $admin_log,
+        'total_success' => $success_count,
+        'total_errors' => $error_count
+    ];
+}
 
 header("Location: index.php?date=" . urlencode($fetch_date));
 die();
