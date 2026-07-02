@@ -125,6 +125,14 @@ foreach ($news_sources as $source_id => $source_data) {
 
 curl_close($ch);
 
+// Log fetch action in user history
+try {
+    $hist_stmt = $db->prepare("INSERT INTO action_history (user_id, news_id, action_type) VALUES (:user_id, NULL, 'fetch')");
+    $hist_stmt->execute([':user_id' => $_SESSION['user_id']]);
+} catch (PDOException $e) {
+    logMessage("Failed to log fetch action history: " . $e->getMessage());
+}
+
 logMessage("Fetch complete. Items processed (attempted insert): $success_count. Feed errors: $error_count");
 
 $_SESSION['admin_fetch_log'] = [

@@ -49,17 +49,19 @@ $all_users = $users_stmt->fetchAll(PDO::FETCH_ASSOC);
 
 // Fetch Action History
 $filter_user_id = filter_input(INPUT_GET, 'user_id', FILTER_VALIDATE_INT);
+$filter_date = $_GET['date'] ?? date('Y-m-d');
 
 $history_query = "
     SELECT h.created_at, u.username, h.action_type, n.title, n.link 
     FROM action_history h
     LEFT JOIN users u ON h.user_id = u.id
     LEFT JOIN news n ON h.news_id = n.id
+    WHERE DATE(h.created_at) = :date
 ";
 
-$params = [];
+$params = [':date' => $filter_date];
 if ($filter_user_id) {
-    $history_query .= " WHERE h.user_id = :user_id";
+    $history_query .= " AND h.user_id = :user_id";
     $params[':user_id'] = $filter_user_id;
 }
 
@@ -151,6 +153,9 @@ $history_logs = $hist_stmt->fetchAll(PDO::FETCH_ASSOC);
         <h3>User Action History</h3>
         
         <form method="GET" action="admin.php" style="margin-bottom: 20px;">
+            <label for="date">Date:</label>
+            <input type="date" name="date" id="date" value="<?= htmlspecialchars($filter_date) ?>" style="padding: 5px; border-radius: 4px; border: 1px solid #ccc; margin-right: 10px;">
+            
             <label for="user_id">Filter by User:</label>
             <select name="user_id" id="user_id" style="padding: 5px; border-radius: 4px; border: 1px solid #ccc;">
                 <option value="">All Users</option>
@@ -181,11 +186,14 @@ $history_logs = $hist_stmt->fetchAll(PDO::FETCH_ASSOC);
                                     $action_color = '#6c757d'; // Default gray for reset
                                     if ($log['action_type'] === 'accept') $action_color = '#28a745'; // Green
                                     elseif ($log['action_type'] === 'reject') $action_color = '#dc3545'; // Red
+                                    elseif ($log['action_type'] === 'fetch') $action_color = '#17a2b8'; // Blue
                                 ?>
                                 <span style="color: <?= $action_color ?>; font-weight: bold; text-transform: capitalize;"><?= htmlspecialchars($log['action_type']) ?></span>
                             </td>
                             <td style="padding: 10px;">
-                                <?php if ($log['link']): ?>
+                                <?php if ($log['action_type'] === 'fetch'): ?>
+                                    <span style="color: #17a2b8;">Bulk Fetch Initiated</span>
+                                <?php elseif ($log['link']): ?>
                                     <a href="<?= htmlspecialchars($log['link']) ?>" target="_blank" style="color: #007bff; text-decoration: none;"><?= htmlspecialchars($log['title']) ?></a>
                                 <?php else: ?>
                                     <span style="color: #999;">Deleted/Unknown</span>

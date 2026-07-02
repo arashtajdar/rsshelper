@@ -60,8 +60,66 @@ foreach ($news_items as $item) {
         .btn-danger { background: #dc3545; }
         .btn-danger:hover { background: #c82333; }
         textarea { width: 100%; height: 200px; padding: 10px; margin-bottom: 20px; font-family: monospace; box-sizing: border-box; }
-        .nav { margin-bottom: 20px; }
-        .nav a { margin-right: 15px; color: #007bff; text-decoration: none; }
+        
+        .top-navbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #ffffff;
+            padding: 15px 25px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            margin-bottom: 25px;
+            font-size: 15px;
+        }
+        .nav-links {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+        }
+        .nav-links a,
+        .nav-links span {
+            color: #495057;
+            text-decoration: none;
+            font-weight: 500;
+            padding: 6px 12px;
+            border-radius: 6px;
+            transition: all 0.2s ease;
+        }
+        .nav-links a:hover {
+            color: #007bff;
+            background-color: #f0f4f8;
+        }
+        .nav-links .active-link {
+            color: #007bff;
+            background-color: #e6f0fa;
+            font-weight: 700;
+        }
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            color: #6c757d;
+        }
+        .user-info strong {
+            color: #212529;
+            font-weight: 600;
+        }
+        .logout-btn {
+            background-color: #fff;
+            color: #dc3545;
+            padding: 8px 16px;
+            border-radius: 6px;
+            text-decoration: none !important;
+            font-weight: 600;
+            transition: all 0.2s;
+            border: 1px solid #dc3545;
+        }
+        .logout-btn:hover {
+            background-color: #dc3545;
+            color: white;
+        }
+        .source-badge { display: inline-block; padding: 2px 6px; background: #eee; color: #555; border-radius: 3px; font-size: 12px; font-weight: bold; }
         
         /* Mobile Responsive */
         @media (max-width: 600px) {
@@ -70,19 +128,34 @@ foreach ($news_items as $item) {
             .controls { flex-direction: column; align-items: stretch; width: 100%; }
             .controls form { display: flex; flex-direction: column; gap: 10px; width: 100%; }
             .controls input[type="date"], .controls button { width: 100%; box-sizing: border-box; }
+            .top-navbar {
+                flex-direction: column;
+                gap: 15px;
+                padding: 15px;
+            }
+            .nav-links,
+            .user-info {
+                flex-wrap: wrap;
+                justify-content: center;
+            }
         }
     </style>
 </head>
 <body>
-    <div class="nav" style="display: flex; justify-content: space-between; align-items: center;">
-        <div>
-            <a href="index.php">Dashboard</a> | <strong>Export / Archive</strong>
-        </div>
-        <div>
-            <?php if (isset($_SESSION['username'])): ?>
-                Logged in as: <strong><?= htmlspecialchars($_SESSION['username']) ?></strong> | 
+    <div class="top-navbar">
+        <div class="nav-links">
+            <img src="assets/logo.png" alt="Logo" style="height: 36px; margin-right: 10px; object-fit: contain;">
+            <a href="index.php">Dashboard</a>
+            <span class="active-link">Export / Archive</span>
+            <?php if (isset($_SESSION['role']) && $_SESSION['role'] === 'admin'): ?>
+                <a href="admin.php">Admin Dashboard</a>
             <?php endif; ?>
-            <a href="logout.php">Logout</a>
+        </div>
+        <div class="user-info">
+            <?php if (isset($_SESSION['username'])): ?>
+                <span>Logged in as <strong><?= htmlspecialchars($_SESSION['username']) ?></strong></span>
+            <?php endif; ?>
+            <a href="logout.php" class="logout-btn">Logout</a>
         </div>
     </div>
 
@@ -114,16 +187,32 @@ foreach ($news_items as $item) {
         <ul class="news-list">
             <?php foreach ($news_items as $item): ?>
                 <li class="news-item">
-                    <a href="<?= htmlspecialchars($item['link']) ?>" target="_blank"><?= htmlspecialchars($item['title']) ?></a>
-                    <?php if ($item['author']): ?>
-                        <span style="color: #666; font-size: 0.9em;"> by <?= htmlspecialchars($item['author']) ?></span>
-                    <?php endif; ?>
-                    <?php if ($item['published']): ?>
-                        <div style="color: #888; font-size: 0.8em; margin-top: 3px;"><?= htmlspecialchars(date('M j, Y, g:i a', strtotime($item['published']))) ?></div>
-                    <?php endif; ?>
-                    <?php if ($item['description']): ?>
-                        <div style="font-size: 0.85em; color: #555; margin-top: 5px; line-height: 1.3;"><?= htmlspecialchars($item['description']) ?></div>
-                    <?php endif; ?>
+                    <div style="display: flex; align-items: flex-start;">
+                        <div style="flex: 0 0 60px; margin-right: 15px; display: flex; align-items: center; justify-content: center;">
+                            <?php $logo = $news_sources[$item['source_id']]['logo'] ?? null; ?>
+                            <?php if ($logo): ?>
+                                <img src="assets/logos/<?= htmlspecialchars($logo) ?>"
+                                    alt="<?= htmlspecialchars($item['source'] ?? 'Unknown') ?>"
+                                    style="max-width: 60px; max-height: 60px; object-fit: contain;">
+                            <?php else: ?>
+                                <?php $badge_color = $source_colors[$item['source_id']] ?? '#eee'; ?>
+                                <span class="source-badge"
+                                    style="background-color: <?= $badge_color ?>; border: 1px solid rgba(0,0,0,0.1); vertical-align: middle;"><?= htmlspecialchars($item['source'] ?? 'Unknown') ?></span>
+                            <?php endif; ?>
+                        </div>
+                        <div style="flex: 1;">
+                            <a href="<?= htmlspecialchars($item['link']) ?>" target="_blank"><?= htmlspecialchars($item['title']) ?></a>
+                            <?php if ($item['author']): ?>
+                                <span style="color: #666; font-size: 0.9em;"> by <?= htmlspecialchars($item['author']) ?></span>
+                            <?php endif; ?>
+                            <?php if ($item['published']): ?>
+                                <div style="color: #888; font-size: 0.8em; margin-top: 3px;"><?= htmlspecialchars(date('M j, Y, g:i a', strtotime($item['published']))) ?></div>
+                            <?php endif; ?>
+                            <?php if ($item['description']): ?>
+                                <div style="font-size: 0.85em; color: #555; margin-top: 5px; line-height: 1.3;"><?= htmlspecialchars($item['description']) ?></div>
+                            <?php endif; ?>
+                        </div>
+                    </div>
                 </li>
             <?php endforeach; ?>
         </ul>
