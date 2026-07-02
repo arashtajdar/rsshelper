@@ -127,13 +127,11 @@ curl_close($ch);
 
 logMessage("Fetch complete. Items processed (attempted insert): $success_count. Feed errors: $error_count");
 
-if (isset($_SESSION['role']) && $_SESSION['role'] === 'admin') {
-    $_SESSION['admin_fetch_log'] = [
-        'details' => $admin_log,
-        'total_success' => $success_count,
-        'total_errors' => $error_count
-    ];
-}
+$_SESSION['admin_fetch_log'] = [
+    'details' => $admin_log,
+    'total_success' => $success_count,
+    'total_errors' => $error_count
+];
 
 header("Location: index.php?date=" . urlencode($fetch_date));
 die();

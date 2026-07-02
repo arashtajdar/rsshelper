@@ -412,19 +412,31 @@ $news_items = $stmt->fetchAll(PDO::FETCH_ASSOC);
         <h2>News for <?= htmlspecialchars($selected_date) ?></h2>
 
         <?php if ($can_fetch): ?>
-            <form method="POST" action="fetch.php" style="margin: 0;">
+            <form method="POST" action="fetch.php" style="margin: 0;" onsubmit="return handleFetchSubmit(this)">
                 <input type="hidden" name="date" value="<?= htmlspecialchars($selected_date) ?>">
                 <button type="submit" class="btn-fetch">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
-                    Fetch Latest News
+                    <span>Fetch Latest News</span>
                 </button>
             </form>
+            <script>
+            function handleFetchSubmit(form) {
+                const btn = form.querySelector('.btn-fetch');
+                btn.disabled = true;
+                btn.style.backgroundColor = '#6c757d';
+                btn.style.boxShadow = 'none';
+                btn.style.cursor = 'not-allowed';
+                btn.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg> <span>Fetching...</span>';
+                return true;
+            }
+            </script>
         <?php endif; ?>
     </div>
 
-    <?php if (isset($_SESSION['admin_fetch_log']) && isset($_SESSION['role']) && $_SESSION['role'] === 'admin'): ?>
-        <div
-            style="background: #e8f4f8; padding: 15px; margin-bottom: 20px; border-radius: 4px; border: 1px solid #bce8f1; color: #31708f;">
+    <?php if (isset($_SESSION['admin_fetch_log'])): ?>
+        <div id="fetch-log-summary"
+            style="background: #e8f4f8; padding: 15px; margin-bottom: 20px; border-radius: 4px; border: 1px solid #bce8f1; color: #31708f; position: relative;">
+            <button type="button" onclick="document.getElementById('fetch-log-summary').style.display='none'" style="position: absolute; top: 10px; right: 10px; background: transparent; border: none; font-size: 20px; color: #31708f; cursor: pointer; padding: 0; line-height: 1;">&times;</button>
             <h3 style="margin-top: 0;">Fetch Log Summary</h3>
             <p><strong>Total Successfully Inserted:</strong> <?= $_SESSION['admin_fetch_log']['total_success'] ?> <br>
                 <strong>Total Feed Errors:</strong> <?= $_SESSION['admin_fetch_log']['total_errors'] ?>
