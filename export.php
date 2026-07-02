@@ -5,20 +5,6 @@ requireAuth();
 $selected_date = $_GET['date'] ?? date('Y-m-d');
 $action = $_POST['action'] ?? '';
 
-// Handle clear action
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && $action === 'clear') {
-    $clear_date = $_POST['clear_date'] ?? $selected_date;
-    // Instead of deleting the news item completely, we should reset the user's status or remove it
-    $stmt = $db->prepare("
-        DELETE FROM user_news_status 
-        WHERE user_id = :user_id 
-        AND status = 1 
-        AND news_id IN (SELECT id FROM news WHERE DATE(published) = :date)
-    ");
-    $stmt->execute([':user_id' => $_SESSION['user_id'], ':date' => $clear_date]);
-    header("Location: export.php?date=" . urlencode($clear_date));
-    die();
-}
 
 // Fetch selected news for the given date
 $stmt = $db->prepare("
@@ -57,8 +43,10 @@ foreach ($news_items as $item) {
         .news-item a:hover { text-decoration: underline; }
         button, .btn { padding: 8px 12px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; text-decoration: none; font-size: 14px; }
         button:hover, .btn:hover { background: #0056b3; }
-        .btn-danger { background: #dc3545; }
-        .btn-danger:hover { background: #c82333; }
+        .btn-reject { background: #dc3545; padding: 4px 8px; font-size: 12px; }
+        .btn-reject:hover { background: #c82333; }
+        .btn-reset { background: #6c757d; color: white; border: none; padding: 4px 8px; font-size: 12px; border-radius: 4px; cursor: pointer; }
+        .btn-reset:hover { background: #5a6268; }
         textarea { width: 100%; height: 200px; padding: 10px; margin-bottom: 20px; font-family: monospace; box-sizing: border-box; }
         
         .top-navbar {
@@ -167,14 +155,6 @@ foreach ($news_items as $item) {
                 <input type="date" name="date" value="<?= htmlspecialchars($selected_date) ?>">
                 <button type="submit">View Date</button>
             </form>
-
-            <?php if (count($news_items) > 0): ?>
-                <form method="POST" action="export.php" onsubmit="return confirm('Are you sure you want to clear all selected records for this date?');">
-                    <input type="hidden" name="action" value="clear">
-                    <input type="hidden" name="clear_date" value="<?= htmlspecialchars($selected_date) ?>">
-                    <button type="submit" class="btn-danger">Clear Selected Records</button>
-                </form>
-            <?php endif; ?>
         </div>
     </div>
 
@@ -211,6 +191,9 @@ foreach ($news_items as $item) {
                             <?php if ($item['description']): ?>
                                 <div style="font-size: 0.85em; color: #555; margin-top: 5px; line-height: 1.3;"><?= htmlspecialchars($item['description']) ?></div>
                             <?php endif; ?>
+                        <div class="news-actions" style="white-space: nowrap; margin-left: 10px; display: flex; flex-direction: column; gap: 5px; justify-content: center;">
+                            <button type="button" id="btn-reject-<?= $item['id'] ?>" onclick="triage(<?= $item['id'] ?>, 'reject')" class="btn-reject">Reject</button>
+                            <button type="button" id="btn-reset-<?= $item['id'] ?>" onclick="triage(<?= $item['id'] ?>, 'reset')" class="btn-reset">Undo</button>
                         </div>
                     </div>
                 </li>
@@ -224,6 +207,28 @@ foreach ($news_items as $item) {
                 copyText.setSelectionRange(0, 99999); // For mobile devices
                 document.execCommand("copy");
                 alert("Copied the text!");
+            }
+
+            function triage(id, action) {
+                const formData = new FormData();
+                formData.append('id', id);
+                formData.append('action', action);
+
+                fetch('action.php', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        window.location.reload();
+                    } else {
+                        alert('Error updating item.');
+                    }
+                })
+                .catch(err => {
+                    alert('Network error.');
+                });
             }
         </script>
     <?php else: ?>
