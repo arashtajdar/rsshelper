@@ -178,10 +178,19 @@ $news_items = $stmt->fetchAll(PDO::FETCH_ASSOC);
             ?>
                 <li class="news-item" id="item-<?= $item['id'] ?>" style="background-color: <?= $bg_color ?>; transition: background-color 0.3s ease;">
                     <div class="news-content" style="display: flex; justify-content: space-between; align-items: center;">
-                        <div>
-                            <?php $badge_color = $source_colors[$item['source_id']] ?? '#eee'; ?>
-                            <span class="source-badge" style="background-color: <?= $badge_color ?>; border: 1px solid rgba(0,0,0,0.1);"><?= htmlspecialchars($item['source'] ?? 'Unknown') ?></span>
-                            <a href="<?= htmlspecialchars($item['link']) ?>" target="_blank" style="line-height: 1.4; display: inline-block;"><?= $news_count-- ?>. <?= htmlspecialchars($item['title']) ?></a>
+                        <div style="flex: 1; padding-right: 15px;">
+                            <div style="margin-bottom: 4px;">
+                                <?php $badge_color = $source_colors[$item['source_id']] ?? '#eee'; ?>
+                                <span class="source-badge" style="background-color: <?= $badge_color ?>; border: 1px solid rgba(0,0,0,0.1); vertical-align: middle;"><?= htmlspecialchars($item['source'] ?? 'Unknown') ?></span>
+                                <a href="<?= htmlspecialchars($item['link']) ?>" target="_blank" style="line-height: 1.4; display: inline-block; font-size: 1.05em; font-weight: bold; vertical-align: middle;"><?= $news_count-- ?>. <?= htmlspecialchars($item['title']) ?></a>
+                            </div>
+                            <div style="font-size: 0.8em; color: #666; margin-bottom: 4px;">
+                                <?= $item['published'] ? '<strong>' . htmlspecialchars(date('M j, Y, g:i a', strtotime($item['published']))) . '</strong>' : '' ?>
+                                <?= $item['author'] ? ' &bull; by ' . htmlspecialchars($item['author']) : '' ?>
+                            </div>
+                            <?php if ($item['description']): ?>
+                                <div style="font-size: 0.85em; color: #555; line-height: 1.3; max-width: 900px;"><?= htmlspecialchars($item['description']) ?></div>
+                            <?php endif; ?>
                         </div>
                         <div class="news-actions" style="white-space: nowrap; margin-left: 10px;">
                             <button type="button" id="btn-accept-<?= $item['id'] ?>" onclick="triage(<?= $item['id'] ?>, 'accept')" class="btn-accept" style="<?= $item['status'] == 1 ? 'display: none;' : '' ?>">Accept</button>
@@ -264,12 +273,6 @@ $news_items = $stmt->fetchAll(PDO::FETCH_ASSOC);
         <p>No news found for these filters.</p>
     <?php endif; ?>
 
-    <div style="margin-top: 40px; padding: 20px 0; border-top: 1px solid #ccc; text-align: center; color: #777; font-size: 12px; display: flex; flex-direction: column; align-items: center; gap: 10px;">
-        <div>&copy; <?= date('Y') ?> RSS Helper. All rights reserved.</div>
-        <a href="https://shirokhorshideiran.org/" target="_blank" style="text-decoration: none; color: #777; display: flex; align-items: center; gap: 5px;">
-            <img src="https://www.google.com/s2/favicons?domain=shirokhorshideiran.org&sz=32" alt="Logo" style="width: 16px; height: 16px;">
-            Shirokhorshideiran.org
-        </a>
-    </div>
+    <?php require 'footer.php'; ?>
 </body>
 </html>

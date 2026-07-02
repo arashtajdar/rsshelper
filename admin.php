@@ -199,5 +199,6 @@ $history_logs = $hist_stmt->fetchAll(PDO::FETCH_ASSOC);
             <p>No action history found.</p>
         <?php endif; ?>
     </div>
+    <?php require 'footer.php'; ?>
 </body>
 </html>

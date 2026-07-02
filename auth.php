@@ -62,5 +62,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <button type="submit">Login</button>
         </form>
     </div>
+    <?php require 'footer.php'; ?>
 </body>
 </html>
