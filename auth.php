@@ -20,6 +20,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $_SESSION['user_id'] = $user['id'];
         $_SESSION['role'] = $user['role'];
         $_SESSION['username'] = $user['username'];
+        
+        try {
+            $stmt = $db->prepare("INSERT INTO action_history (user_id, action_type) VALUES (:user_id, 'login')");
+            $stmt->execute([':user_id' => $user['id']]);
+        } catch (PDOException $e) {
+            logMessage("Failed to log login action for user " . $user['id'] . ": " . $e->getMessage());
+        }
+
         header("Location: index.php");
         die();
     } else {
