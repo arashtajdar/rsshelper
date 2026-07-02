@@ -26,12 +26,12 @@ $rss_feeds = [
     'Wall Street Journal' => 'wsj.com',
     'Axios' => 'axios.com',
 ];
-$baseUrl = "https://api.currentsapi.services/v1/latest-news";
+$baseUrl = "https://api.currentsapi.services/v1/search";
 $queryParams = [
-    'domain' => 'foxnews.com',
+    'domain' => 'cnn.com,cnn,edition.cnn.com,axios.com',
     'language' => 'en',
-    // 'start_date' => gmdate('Y-m-d\T00:00:00\Z'),
-    // 'end_date' => gmdate('Y-m-d\T23:59:59\Z'),
+    'start_date' => gmdate('Y-m-d\T00:00:00\Z'),
+    'end_date' => gmdate('Y-m-d\T23:59:59\Z'),
     'apiKey' => getenv('CURRENTS_API_KEY'),
 ];
 $url = $baseUrl . '?' . http_build_query($queryParams);
