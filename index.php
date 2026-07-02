@@ -94,15 +94,19 @@ $news_items = $stmt->fetchAll(PDO::FETCH_ASSOC);
             color: #495057;
             text-decoration: none;
             font-weight: 500;
-            transition: color 0.2s;
+            padding: 6px 12px;
+            border-radius: 6px;
+            transition: all 0.2s ease;
         }
 
         .nav-links a:hover {
             color: #007bff;
+            background-color: #f0f4f8;
         }
 
         .nav-links .active-link {
             color: #007bff;
+            background-color: #e6f0fa;
             font-weight: 700;
         }
 
@@ -179,10 +183,13 @@ $news_items = $stmt->fetchAll(PDO::FETCH_ASSOC);
             gap: 8px;
             margin-top: 30px;
             margin-bottom: 20px;
+            flex-wrap: wrap;
         }
 
         .pagination a, .pagination span {
-            display: inline-block;
+            display: inline-flex;
+            justify-content: center;
+            align-items: center;
             padding: 8px 14px;
             border-radius: 6px;
             font-size: 14px;
@@ -192,6 +199,7 @@ $news_items = $stmt->fetchAll(PDO::FETCH_ASSOC);
             background: white;
             border: 1px solid #dee2e6;
             transition: all 0.2s;
+            white-space: nowrap;
         }
 
         .pagination a:hover {
@@ -389,6 +397,7 @@ $news_items = $stmt->fetchAll(PDO::FETCH_ASSOC);
 <body>
     <div class="top-navbar">
         <div class="nav-links">
+            <img src="assets/logo.png" alt="Logo" style="height: 36px; margin-right: 10px; object-fit: contain;">
             <span class="active-link">Dashboard</span>
             <a href="export.php">Export / Archive</a>
             <?php if (isset($_SESSION['role']) && $_SESSION['role'] === 'admin'): ?>
