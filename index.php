@@ -506,11 +506,18 @@ $news_items = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 <li class="news-item" id="item-<?= $item['id'] ?>"
                     style="background-color: <?= $bg_color ?>; transition: background-color 0.3s ease;">
                     <div class="news-content" style="display: flex; justify-content: space-between; align-items: center;">
-                        <div style="flex: 1; padding-right: 15px;">
-                            <div style="margin-bottom: 4px;">
+                        <div style="flex: 0 0 60px; margin-right: 15px; display: flex; align-items: center; justify-content: center;">
+                            <?php $logo = $news_sources[$item['source_id']]['logo'] ?? null; ?>
+                            <?php if ($logo): ?>
+                                <img src="assets/logos/<?= htmlspecialchars($logo) ?>" alt="<?= htmlspecialchars($item['source'] ?? 'Unknown') ?>" style="max-width: 60px; max-height: 60px; object-fit: contain;">
+                            <?php else: ?>
                                 <?php $badge_color = $source_colors[$item['source_id']] ?? '#eee'; ?>
                                 <span class="source-badge"
                                     style="background-color: <?= $badge_color ?>; border: 1px solid rgba(0,0,0,0.1); vertical-align: middle;"><?= htmlspecialchars($item['source'] ?? 'Unknown') ?></span>
+                            <?php endif; ?>
+                        </div>
+                        <div style="flex: 1; padding-right: 15px;">
+                            <div style="margin-bottom: 4px;">
                                 <a href="<?= htmlspecialchars($item['link']) ?>" target="_blank"
                                     style="line-height: 1.4; display: inline-block; font-size: 1.05em; font-weight: bold; vertical-align: middle;"><?= $news_count-- ?>.
                                     <?= htmlspecialchars($item['title']) ?></a>

@@ -19,19 +19,19 @@ define('SRC_WSJ', 12);
 define('SRC_AXIOS', 13);
 
 $news_sources = [
-    SRC_CNN => ['name' => 'CNN', 'domain' => 'cnn.com'],
-    SRC_FOX => ['name' => 'Fox News', 'domain' => 'foxnews.com'],
-    SRC_NYT => ['name' => 'New York Times', 'domain' => 'nytimes.com'],
-    SRC_NYP => ['name' => 'New York Post', 'domain' => 'nypost.com'],
-    SRC_WT => ['name' => 'Washington Times', 'domain' => 'washingtontimes.com'],
-    SRC_WP => ['name' => 'Washington Post', 'domain' => 'washingtonpost.com'],
-    SRC_OAN => ['name' => 'OAN', 'domain' => 'oann.com'],
-    SRC_GUARDIAN => ['name' => 'Guardian', 'domain' => 'theguardian.com'],
-    SRC_SPIEGEL => ['name' => 'Spiegel', 'domain' => 'spiegel.de'],
-    SRC_FRANCE24 => ['name' => 'France 24', 'domain' => 'france24.com'],
-    SRC_BBC => ['name' => 'BBC World', 'domain' => 'bbc.com'],
-    SRC_WSJ => ['name' => 'Wall Street Journal', 'domain' => 'wsj.com'],
-    SRC_AXIOS => ['name' => 'Axios', 'domain' => 'axios.com'],
+    SRC_CNN => ['name' => 'CNN', 'domain' => 'cnn.com', 'logo' => 'cnn.png'],
+    SRC_FOX => ['name' => 'Fox News', 'domain' => 'foxnews.com', 'logo' => 'fox_news.png'],
+    SRC_NYT => ['name' => 'New York Times', 'domain' => 'nytimes.com', 'logo' => 'new_york_times.png'],
+    SRC_NYP => ['name' => 'New York Post', 'domain' => 'nypost.com', 'logo' => 'new_york_post.png'],
+    SRC_WT => ['name' => 'Washington Times', 'domain' => 'washingtontimes.com', 'logo' => 'washington_times.png'],
+    SRC_WP => ['name' => 'Washington Post', 'domain' => 'washingtonpost.com', 'logo' => 'washington_post.png'],
+    SRC_OAN => ['name' => 'OAN', 'domain' => 'oann.com', 'logo' => 'oan.png'],
+    SRC_GUARDIAN => ['name' => 'Guardian', 'domain' => 'theguardian.com', 'logo' => 'guardian.png'],
+    SRC_SPIEGEL => ['name' => 'Spiegel', 'domain' => 'spiegel.de', 'logo' => 'spiegel.png'],
+    SRC_FRANCE24 => ['name' => 'France 24', 'domain' => 'france24.com', 'logo' => 'france24.png'],
+    SRC_BBC => ['name' => 'BBC World', 'domain' => 'bbc.com', 'logo' => 'bbc_world.png'],
+    SRC_WSJ => ['name' => 'Wall Street Journal', 'domain' => 'wsj.com', 'logo' => 'wall_street_journal.png'],
+    SRC_AXIOS => ['name' => 'Axios', 'domain' => 'axios.com', 'logo' => 'axios.png'],
 ];
 
 $source_colors = [
