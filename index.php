@@ -13,7 +13,7 @@ $current_user_id = $_SESSION['user_id'];
 $query = "SELECT news.*, COALESCE(user_news_status.status, 0) AS status 
           FROM news 
           LEFT JOIN user_news_status ON news.id = user_news_status.news_id AND user_news_status.user_id = :current_user_id 
-          WHERE news.created_date = :date";
+          WHERE DATE(news.published) = :date";
 
 $params = [
     ':date' => $selected_date,
@@ -26,8 +26,8 @@ if ($selected_status !== 'all') {
 }
 
 if ($selected_source !== '') {
-    $query .= " AND source = :source";
-    $params[':source'] = $selected_source;
+    $query .= " AND source_id = :source";
+    $params[':source'] = (int)$selected_source;
 }
 
 if ($selected_search !== '') {
@@ -42,18 +42,7 @@ $stmt = $db->prepare($query);
 $stmt->execute($params);
 $news_items = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-// Fetch available sources for the dropdown
-$src_stmt = $db->prepare("
-    SELECT DISTINCT news.source 
-    FROM news 
-    LEFT JOIN user_news_status ON news.id = user_news_status.news_id AND user_news_status.user_id = :current_user_id 
-    WHERE COALESCE(user_news_status.status, 0) = 0 
-      AND news.created_date = :date 
-      AND news.source IS NOT NULL 
-    ORDER BY news.source ASC
-");
-$src_stmt->execute([':date' => $selected_date, ':current_user_id' => $current_user_id]);
-$available_sources = $src_stmt->fetchAll(PDO::FETCH_COLUMN);
+// Fetch available sources for the dropdown is no longer a DB query, we use $news_sources from config.
 
 ?>
 <!DOCTYPE html>
@@ -170,8 +159,8 @@ $available_sources = $src_stmt->fetchAll(PDO::FETCH_COLUMN);
             </select>
             <select name="source">
                 <option value="">All Sources</option>
-                <?php foreach ($available_sources as $src): ?>
-                    <option value="<?= htmlspecialchars($src) ?>" <?= $src === $selected_source ? 'selected' : '' ?>><?= htmlspecialchars($src) ?></option>
+                <?php foreach ($news_sources as $src_id => $src_data): ?>
+                    <option value="<?= $src_id ?>" <?= (string)$src_id === $selected_source ? 'selected' : '' ?>><?= htmlspecialchars($src_data['name']) ?></option>
                 <?php endforeach; ?>
             </select>
             <input type="text" name="search" value="<?= htmlspecialchars($selected_search) ?>" placeholder="Search titles..." style="padding: 8px; border-radius: 4px; border: 1px solid #ccc; flex-grow: 1; min-width: 200px;">
@@ -190,7 +179,7 @@ $available_sources = $src_stmt->fetchAll(PDO::FETCH_COLUMN);
                 <li class="news-item" id="item-<?= $item['id'] ?>" style="background-color: <?= $bg_color ?>; transition: background-color 0.3s ease;">
                     <div class="news-content" style="display: flex; justify-content: space-between; align-items: center;">
                         <div>
-                            <?php $badge_color = $source_colors[$item['source']] ?? '#eee'; ?>
+                            <?php $badge_color = $source_colors[$item['source_id']] ?? '#eee'; ?>
                             <span class="source-badge" style="background-color: <?= $badge_color ?>; border: 1px solid rgba(0,0,0,0.1);"><?= htmlspecialchars($item['source'] ?? 'Unknown') ?></span>
                             <a href="<?= htmlspecialchars($item['link']) ?>" target="_blank" style="line-height: 1.4; display: inline-block;"><?= $news_count-- ?>. <?= htmlspecialchars($item['title']) ?></a>
                         </div>

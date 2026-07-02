@@ -4,50 +4,41 @@ session_start();
 // Configuration
 define('ACCESS_KEY', getenv('ACCESS_KEY') ?: 'secret123'); // Fallback for testing
 
-define('SRC_CNN', 1);
-define('SRC_FOX', 2);
-define('SRC_NYT', 3);
-define('SRC_NYP', 4);
-define('SRC_WT', 5);
-define('SRC_WP', 6);
-define('SRC_OAN', 7);
-define('SRC_GUARDIAN', 8);
-define('SRC_SPIEGEL', 9);
-define('SRC_FRANCE24', 10);
-define('SRC_BBC', 11);
-define('SRC_WSJ', 12);
-define('SRC_AXIOS', 13);
+$rss_feeds = [
+    // US News
+    'CNN' => 'http://rss.cnn.com/rss/cnn_topstories.rss',
+    'Fox News' => 'https://moxie.foxnews.com/google-publisher/latest.xml',
+    'New York Times' => 'https://rss.nytimes.com/services/xml/rss/nyt/HomePage.xml',
+    'New York Post' => 'https://nypost.com/feed/',
+    'Washington Times' => 'https://www.washingtontimes.com/rss/headlines/news/',
+    'Washington Post' => 'https://feeds.washingtonpost.com/rss/world',
+    'OAN' => 'https://www.oann.com/feed/',
 
-$news_sources = [
-    SRC_CNN => ['name' => 'CNN', 'domain' => 'cnn.com'],
-    SRC_FOX => ['name' => 'Fox News', 'domain' => 'foxnews.com'],
-    SRC_NYT => ['name' => 'New York Times', 'domain' => 'nytimes.com'],
-    SRC_NYP => ['name' => 'New York Post', 'domain' => 'nypost.com'],
-    SRC_WT => ['name' => 'Washington Times', 'domain' => 'washingtontimes.com'],
-    SRC_WP => ['name' => 'Washington Post', 'domain' => 'washingtonpost.com'],
-    SRC_OAN => ['name' => 'OAN', 'domain' => 'oann.com'],
-    SRC_GUARDIAN => ['name' => 'Guardian', 'domain' => 'theguardian.com'],
-    SRC_SPIEGEL => ['name' => 'Spiegel', 'domain' => 'spiegel.de'],
-    SRC_FRANCE24 => ['name' => 'France 24', 'domain' => 'france24.com'],
-    SRC_BBC => ['name' => 'BBC World', 'domain' => 'bbc.com'],
-    SRC_WSJ => ['name' => 'Wall Street Journal', 'domain' => 'wsj.com'],
-    SRC_AXIOS => ['name' => 'Axios', 'domain' => 'axios.com'],
+    // Europe News
+    'Guardian' => 'https://www.theguardian.com/world/rss',
+    'Spiegel' => 'https://www.spiegel.de/international/index.rss',
+    'France 24' => 'https://www.france24.com/en/rss',
+    'BBC World' => 'https://feeds.bbci.co.uk/news/world/rss.xml',
+
+    // Check Occasionally
+    'Wall Street Journal' => 'https://feeds.a.dj.com/rss/RSSWorldNews.xml',
+    'Axios' => 'https://api.axios.com/feed/',
 ];
 
 $source_colors = [
-    SRC_CNN => '#ffe6e6',
-    SRC_FOX => '#e6f2ff',
-    SRC_NYT => '#f2f2f2',
-    SRC_NYP => '#ffebf0',
-    SRC_WT => '#e6e6ff',
-    SRC_WP => '#e6f9ff',
-    SRC_OAN => '#e6f7ff',
-    SRC_GUARDIAN => '#ffffe6',
-    SRC_SPIEGEL => '#fff0e6',
-    SRC_FRANCE24 => '#e6ffff',
-    SRC_BBC => '#ffe6f2',
-    SRC_WSJ => '#f0f0f0',
-    SRC_AXIOS => '#e6ffe6'
+    'CNN' => '#ffe6e6',                 // Red
+    'Fox News' => '#e6f2ff',            // Blue
+    'New York Times' => '#f2f2f2',      // Black/White
+    'New York Post' => '#ffebf0',       // Red/Pink
+    'Washington Times' => '#e6e6ff',    // Dark Blue
+    'Washington Post' => '#e6f9ff',     // Light Cyan
+    'OAN' => '#e6f7ff',                 // Light Blue
+    'Guardian' => '#ffffe6',            // Yellow/Blue
+    'Spiegel' => '#fff0e6',             // Orange
+    'France 24' => '#e6ffff',           // Cyan
+    'BBC World' => '#ffe6f2',           // Red
+    'Wall Street Journal' => '#f0f0f0', // Black/White
+    'Axios' => '#e6ffe6'                // Teal/Green
 ];
 
 // Paths
@@ -95,14 +86,16 @@ try {
 
 
 // Authentication Gatekeeper
-function requireAuth() {
+function requireAuth()
+{
     if (empty($_SESSION['authenticated']) || $_SESSION['authenticated'] !== true || !isset($_SESSION['user_id'])) {
         header("Location: auth.php");
         die('Access Denied');
     }
 }
 
-function requireAdmin() {
+function requireAdmin()
+{
     if (empty($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
         http_response_code(403);
         die('403 Forbidden - Admin access required');
@@ -110,7 +103,8 @@ function requireAdmin() {
 }
 
 
-function logMessage($message) {
+function logMessage($message)
+{
     $date = date('Y-m-d H:i:s');
     file_put_contents(LOG_PATH, "[$date] $message\n", FILE_APPEND);
 }

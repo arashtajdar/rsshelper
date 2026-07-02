@@ -7,94 +7,100 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 }
 
 $fetch_date = $_POST['date'] ?? date('Y-m-d');
-
-// Set stream context for timeout
-$ctx = stream_context_create([
-    'http' => [
-        'timeout' => 5 // 5 seconds timeout
-    ]
-]);
+$api_key = getenv('CURRENTS_API_KEY') ?: $_ENV['CURRENTS_API_KEY'] ?? '';
 
 $success_count = 0;
 $error_count = 0;
 
 $admin_log = [];
 
-foreach ($rss_feeds as $source_name => $feed_url) {
+$ch = curl_init();
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+
+foreach ($news_sources as $source_id => $source_data) {
     $agency_stats = ['fetched' => 0, 'error' => null];
+    $source_name = $source_data['name'];
+    $domain = $source_data['domain'];
     
-    $xml_string = @file_get_contents($feed_url, false, $ctx);
-
-    if ($xml_string === false) {
-        $error = error_get_last();
-        $error_msg = $error ? $error['message'] : "Failed to fetch feed";
-        logMessage("Failed to fetch feed: $feed_url");
-        $agency_stats['error'] = "HTTP Error: " . $error_msg;
-        $admin_log[$source_name] = $agency_stats;
-        $error_count++;
-        continue;
-    }
-
-    $rss = @simplexml_load_string($xml_string, 'SimpleXMLElement', LIBXML_NOCDATA);
-
-    if ($rss === false) {
-        $error = error_get_last();
-        $error_msg = $error ? $error['message'] : "Failed to parse feed";
-        logMessage("Failed to parse feed: $feed_url");
-        $agency_stats['error'] = "XML Parse Error: " . $error_msg;
-        $admin_log[$source_name] = $agency_stats;
-        $error_count++;
-        continue;
-    }
-
-    $items = [];
-    if (isset($rss->channel->item)) {
-        $items = $rss->channel->item;
-    } elseif (isset($rss->item)) {
-        // RSS 1.0
-        $items = $rss->item;
-    } elseif (isset($rss->entry)) {
-        // Atom
-        $items = $rss->entry;
-    }
-
-    foreach ($items as $item) {
-        // Depending on format, title and link can be accessed differently. We assume standard RSS.
-        $title = (string) ($item->title ?? '');
-        $link = (string) ($item->link ?? '');
-
-        // Sometimes Atom uses attributes for link
-        if (empty($link) && isset($item->link['href'])) {
-            $link = (string) $item->link['href'];
+    $baseUrl = "https://api.currentsapi.services/v1/latest-news";
+    
+    for ($page = 1; $page <= 2; $page++) {
+        $queryParams = [
+            'domain' => $domain,
+            'language' => 'en',
+            'apiKey' => $api_key,
+            'page_number' => $page
+        ];
+        $url = $baseUrl . '?' . http_build_query($queryParams);
+        
+        curl_setopt($ch, CURLOPT_URL, $url);
+        $response = curl_exec($ch);
+        $curl_error = curl_error($ch);
+        
+        if ($curl_error) {
+            $agency_stats['error'] = "cURL Error (Page $page): " . $curl_error;
+            $error_count++;
+            logMessage("Failed to fetch $source_name: cURL error $curl_error");
+            break;
         }
-
-        // Extract and parse date
-        $pubDate = '';
-        if (isset($item->pubDate)) {
-            $pubDate = (string) $item->pubDate;
-        } elseif (isset($item->updated)) {
-            $pubDate = (string) $item->updated;
-        } elseif (isset($item->children('http://purl.org/dc/elements/1.1/')->date)) {
-            $pubDate = (string) $item->children('http://purl.org/dc/elements/1.1/')->date;
+        
+        $data = json_decode($response, true);
+        
+        if (!$data || !isset($data['status']) || $data['status'] !== 'ok') {
+            if (!$agency_stats['error']) {
+                $agency_stats['error'] = "API Error (Page $page): " . ($data['msg'] ?? 'Unknown');
+                $error_count++;
+            }
+            logMessage("Failed to fetch $source_name: " . json_encode($data));
+            break;
         }
-
-        if ($title && $link) {
-            $item_date = $fetch_date; // Fallback to fetch date if no date found
-            if ($pubDate) {
-                $parsed_time = strtotime($pubDate);
+        
+        $news = $data['news'] ?? [];
+        if (empty($news)) {
+            break;
+        }
+        
+        $found_duplicate = false;
+        
+        foreach ($news as $item) {
+            $news_uuid = $item['id'] ?? '';
+            $title = $item['title'] ?? '';
+            $description = $item['description'] ?? '';
+            $link = $item['url'] ?? '';
+            $author = $item['author'] ?? '';
+            $published_str = $item['published'] ?? '';
+            
+            if (!$news_uuid || !$title || !$link) continue;
+            
+            $published = null;
+            if ($published_str) {
+                $parsed_time = strtotime($published_str);
                 if ($parsed_time) {
-                    $item_date = date('Y-m-d', $parsed_time);
+                    $published = date('Y-m-d H:i:s', $parsed_time);
                 }
             }
-
-            // Insert the article using the date it was actually published, or today's date
+            
+            // Check if duplicate
+            $checkStmt = $db->prepare("SELECT id FROM news WHERE news_id = :news_id");
+            $checkStmt->execute([':news_id' => $news_uuid]);
+            if ($checkStmt->rowCount() > 0) {
+                // Found a duplicate, meaning we reached already fetched news for this source.
+                $found_duplicate = true;
+                break;
+            }
+            
             try {
-                $stmt = $db->prepare("INSERT IGNORE INTO news (title, link, status, created_date, source) VALUES (:title, :link, 0, :date, :source)");
+                $stmt = $db->prepare("INSERT INTO news (news_id, title, description, link, author, published, source, source_id, status) VALUES (:news_id, :title, :description, :link, :author, :published, :source, :source_id, 0)");
                 $stmt->execute([
+                    ':news_id' => $news_uuid,
                     ':title' => $title,
+                    ':description' => $description,
                     ':link' => $link,
-                    ':date' => $item_date,
-                    ':source' => $source_name
+                    ':author' => $author,
+                    ':published' => $published,
+                    ':source' => $source_name,
+                    ':source_id' => $source_id
                 ]);
                 if ($stmt->rowCount() > 0) {
                     $success_count++;
@@ -107,11 +113,17 @@ foreach ($rss_feeds as $source_name => $feed_url) {
                 }
             }
         }
+        
+        if ($found_duplicate) {
+            break; // Stop fetching more pages for this source
+        }
     }
 
     $admin_log[$source_name] = $agency_stats;
-    logMessage("Successfully processed feed: $feed_url ($source_name)");
+    logMessage("Successfully processed: $source_name");
 }
+
+curl_close($ch);
 
 logMessage("Fetch complete. Items processed (attempted insert): $success_count. Feed errors: $error_count");
 

@@ -1,13 +1,18 @@
 CREATE TABLE IF NOT EXISTS news (
     id INT AUTO_INCREMENT PRIMARY KEY,
+    news_id VARCHAR(50) UNIQUE,
     title TEXT,
-    link VARCHAR(255) UNIQUE,
+    description TEXT,
+    link VARCHAR(255),
+    author VARCHAR(255),
+    published DATETIME,
     status INT DEFAULT 0,
-    created_date DATE,
-    source VARCHAR(255)
+    created_date DATETIME DEFAULT CURRENT_TIMESTAMP,
+    source VARCHAR(255),
+    source_id INT
 );
 
-CREATE INDEX idx_news_date_status ON news (created_date, status);
+CREATE INDEX idx_news_date_status ON news (published, status);
 
 CREATE TABLE IF NOT EXISTS users (
     id INT AUTO_INCREMENT PRIMARY KEY,

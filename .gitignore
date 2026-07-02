@@ -5,3 +5,5 @@ logs/*
 cookies.txt
 server.log
 .env
+docker-compose.yml
+Dockerfile
